@@ -1,0 +1,43 @@
+
+# Chinese Learning App API Test
+
+### 1. Health Check
+GET http://localhost:8080/health
+
+### 2. Register New User
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "123456",
+    "nickname": "中文学习者"
+}
+
+### 3. Try Register Again with Same Email (Should Fail)
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "123456",
+    "nickname": "中文学习者"
+}
+
+### 4. Login with Correct Credentials
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "123456"
+}
+
+### 5. Login with Wrong Password (Should Fail)
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "wrongpassword"
+}

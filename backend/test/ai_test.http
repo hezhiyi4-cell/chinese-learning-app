@@ -1,0 +1,55 @@
+
+# Chinese Learning App - AI API Tests
+
+### 1. 健康检查
+GET http://localhost:8080/health
+
+### 2. 获取场景列表（需要登录）
+### 先注册/登录获取 Token
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+	"email": "ai_test@example.com",
+	"password": "123456",
+	"nickname": "AI Tester"
+}
+
+### 3. 登录
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+	"email": "ai_test@example.com",
+	"password": "123456"
+}
+
+### 4. 获取场景列表（需要 Token）
+GET http://localhost:8080/api/v1/ai/scenes
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+### 5. AI 对话（需要 Token）
+POST http://localhost:8080/api/v1/ai/chat
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+	"message": "你好，我想点一份炒饭",
+	"scene": "restaurant",
+	"history": []
+}
+
+### 6. 另一个场景对话（需要 Token）
+POST http://localhost:8080/api/v1/ai/chat
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+	"message": "我的航班几点登机？",
+	"scene": "airport",
+	"history": []
+}
+
+### 注意：
+### - 对于 /speech-to-text 和 /evaluate，需要上传真实的音频文件才能测试
+### - 可以使用 Postman、curl 或其他工具进行文件上传测试

@@ -1,0 +1,37 @@
+
+name: chinese_learning_app
+description: A multi-platform Chinese learning game app for foreigners
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 &lt;4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State management
+  flutter_bloc: ^8.1.3
+  bloc: ^8.1.2
+  
+  # Network
+  dio: ^5.3.2
+  web_socket_channel: ^2.4.0
+  
+  # Local storage
+  shared_preferences: ^2.2.2
+  
+  # Internationalization
+  intl: ^0.18.1
+  
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

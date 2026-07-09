@@ -1,0 +1,175 @@
+
+# Chinese Learning App - Course API Tests
+
+### 1. 健康检查
+GET http://localhost:8080/health
+
+### 2. 获取所有课程
+GET http://localhost:8080/api/v1/courses
+
+### 3. 按级别筛选课程 (L0)
+GET http://localhost:8080/api/v1/courses?level=L0
+
+### 4. 获取课程详情 (第一个课程)
+GET http://localhost:8080/api/v1/courses/1
+
+### 5. 获取课时详情
+GET http://localhost:8080/api/v1/lessons/1
+
+### 6. 注册新用户
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+    "email": "learner@test.com",
+    "password": "123456",
+    "nickname": "中文学习者"
+}
+
+### 7. 登录获取 Token
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "learner@test.com",
+    "password": "123456"
+}
+
+### 7.1 登录默认管理员
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@chineseapp.com",
+    "password": "Admin123456"
+}
+
+### 8. 获取学习进度 (需要普通用户 Token)
+GET http://localhost:8080/api/v1/progress
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+### 9. 更新学习进度 (需要普通用户 Token)
+POST http://localhost:8080/api/v1/progress/1
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "score": 85
+}
+
+### 10. 获取学习统计 (需要普通用户 Token)
+GET http://localhost:8080/api/v1/stats
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+### 11. 新增课程 (需要管理员 Token)
+POST http://localhost:8080/api/v1/courses
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "title": "L3 场景表达进阶",
+    "description": "学习更复杂的中文场景表达",
+    "level": "L3",
+    "levelName": "中级",
+    "thumbnail": "",
+    "sortOrder": 4,
+    "isPublished": true
+}
+
+### 12. 编辑课程 (需要管理员 Token)
+PUT http://localhost:8080/api/v1/courses/4
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "title": "L3 场景表达进阶（更新版）",
+    "description": "学习更复杂的中文场景表达与礼貌说法",
+    "level": "L3",
+    "levelName": "中级",
+    "thumbnail": "",
+    "sortOrder": 4,
+    "isPublished": true
+}
+
+### 12.1 快捷切换课程发布状态 (需要管理员 Token)
+PATCH http://localhost:8080/api/v1/admin/courses/4/publish
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "isPublished": false
+}
+
+### 12.2 批量重排课程顺序 (需要管理员 Token)
+PUT http://localhost:8080/api/v1/admin/courses/reorder
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "courseIds": [1, 2, 3, 4]
+}
+
+### 12.3 上传课程封面 (需要管理员 Token)
+POST http://localhost:8080/api/v1/admin/courses/4/upload
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+Content-Type: multipart/form-data; boundary=Boundary123
+
+--Boundary123
+Content-Disposition: form-data; name="file"; filename="course-cover.png"
+Content-Type: image/png
+
+< PASTE_LOCAL_IMAGE_FILE_HERE
+--Boundary123--
+
+### 12.4 删除课程封面 (需要管理员 Token)
+DELETE http://localhost:8080/api/v1/admin/courses/4/thumbnail
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+### 13. 新增课时 (需要管理员 Token)
+POST http://localhost:8080/api/v1/courses/4/lessons
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "title": "第1课：机场改签",
+    "type": "dialogue",
+    "content": "{\"introduction\":\"学习航班改签常用表达\",\"content\":\"我想改签到明天上午的航班。\"}",
+    "audioUrl": "",
+    "sortOrder": 1,
+    "isFree": true,
+    "xpReward": 30
+}
+
+### 14. 编辑课时 (需要管理员 Token)
+PUT http://localhost:8080/api/v1/lessons/11
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "courseId": 4,
+    "title": "第1课：机场改签与值机",
+    "type": "dialogue",
+    "content": "{\"introduction\":\"学习机场改签与值机表达\",\"content\":\"我想改签到明天上午的航班，还想确认行李额度。\"}",
+    "audioUrl": "",
+    "sortOrder": 1,
+    "isFree": true,
+    "xpReward": 35
+}
+
+### 14.1 批量重排课时顺序 (需要管理员 Token)
+PUT http://localhost:8080/api/v1/admin/lessons/reorder
+Content-Type: application/json
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+{
+    "courseId": 4,
+    "lessonIds": [11, 12, 13]
+}
+
+### 15. 删除课时 (需要管理员 Token)
+DELETE http://localhost:8080/api/v1/lessons/11
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
+
+### 16. 删除课程 (需要管理员 Token)
+DELETE http://localhost:8080/api/v1/courses/4
+Authorization: Bearer PASTE_YOUR_TOKEN_HERE
