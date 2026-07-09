@@ -2,13 +2,17 @@
 # 外国人学中文 - 多端游戏化学习APP
 
 ## 项目简介
-这是一个面向外国人的中文学习平台，结合游戏化学习体验，支持iPad、电脑端多端使用。
+这是一个面向外国人的中文学习平台，结合游戏化学习体验，支持课程学习、学习进度、管理后台、封面上传，并提供一个可直接运行的 `web.html` 演示前端。
 
 ## 项目架构
-- **前端**: Flutter（一套代码多端适配）
-- **后端**: Golang + Gin（高性能API）
-- **数据库**: PostgreSQL + Redis
-- **AI**: OpenAI Whisper + GPT-4o-mini
+- **前端（演示版）**: 纯 HTML/CSS/JS（`web.html` + `config.js`）
+- **后端**: Golang + Gin
+- **数据库**: SQLite（GORM，纯 Go 驱动）
+- **文件上传**: 本地 `backend/uploads/`（课程封面）
+- **AI（可选）**: OpenAI（未配置 Key 时可使用本地模拟模式）
+
+## 部署
+- Render 后端 + Vercel 前端：见 [DEPLOY_RENDER_VERCEL.md](file:///c:/Users/user/Desktop/ChineseLearningApp/DEPLOY_RENDER_VERCEL.md)
 
 ## 开发阶段
 - [ ] 阶段0：项目初始化与基础架构
