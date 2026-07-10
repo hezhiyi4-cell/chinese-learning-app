@@ -1,11 +1,10 @@
-
 package database
 
 import (
 	"chinese-learning-app/internal/models"
+	"log"
 	"os"
 	"path/filepath"
-	"log"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -30,7 +29,14 @@ func InitDB() error {
 
 	log.Println("Database connected successfully")
 
-	err = DB.AutoMigrate(&models.User{}, &models.Course{}, &models.Lesson{}, &models.UserProgress{})
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Course{},
+		&models.Lesson{},
+		&models.UserProgress{},
+		&models.PaymentOrder{},
+		&models.PaymentSubscription{},
+	)
 	if err != nil {
 		return err
 	}

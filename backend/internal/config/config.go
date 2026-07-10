@@ -1,4 +1,3 @@
-
 package config
 
 import (
@@ -20,6 +19,10 @@ type Config struct {
 	UploadDir            string
 	DefaultAdminEmail    string
 	DefaultAdminPassword string
+	FrontendBaseURL      string
+	PayPalClientID       string
+	PayPalSecret         string
+	PayPalBaseURL        string
 }
 
 func Load() *Config {
@@ -36,8 +39,12 @@ func Load() *Config {
 		OpenAIAPIKey:         getEnv("OPENAI_API_KEY", ""),
 		SQLitePath:           getEnv("SQLITE_PATH", "chinese_learning.db"),
 		UploadDir:            getEnv("UPLOAD_DIR", "./uploads"),
-		DefaultAdminEmail: getEnv("DEFAULT_ADMIN_EMAIL", "admin@chineseapp.com"),
+		DefaultAdminEmail:    getEnv("DEFAULT_ADMIN_EMAIL", "admin@chineseapp.com"),
 		DefaultAdminPassword: getEnv("DEFAULT_ADMIN_PASSWORD", "Admin123456"),
+		FrontendBaseURL:      getEnv("FRONTEND_BASE_URL", "https://chinese-learning-app-jade.vercel.app"),
+		PayPalClientID:       getEnv("PAYPAL_CLIENT_ID", ""),
+		PayPalSecret:         getEnv("PAYPAL_SECRET", ""),
+		PayPalBaseURL:        getEnv("PAYPAL_BASE_URL", "https://api-m.sandbox.paypal.com"),
 	}
 }
 

@@ -27,17 +27,21 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	courseRepo := repositories.NewCourseRepository(db)
 	progressRepo := repositories.NewProgressRepository(db)
+	paymentRepo := repositories.NewPaymentRepository(db)
 
 	// 初始化 Services
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	courseService := services.NewCourseService(courseRepo)
 	progressService := services.NewProgressService(progressRepo, userRepo, courseRepo)
 	aiService := services.NewAIService(cfg.OpenAIAPIKey)
+	paypalGateway := services.NewPayPalGateway(cfg.PayPalClientID, cfg.PayPalSecret, cfg.PayPalBaseURL)
+	paymentService := services.NewPaymentService(paymentRepo, userRepo, cfg.FrontendBaseURL, paypalGateway)
 
 	// 初始化 Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	courseHandler := handlers.NewCourseHandler(courseService, progressService)
 	aiHandler := handlers.NewAIHandler(aiService)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
 	// 填充初始数据
 	if err := database.SeedInitialData(courseRepo); err != nil {
@@ -114,6 +118,9 @@ func main() {
 			protected.GET("/stats", courseHandler.GetStats)
 			protected.GET("/user/stats", courseHandler.GetStats)
 			protected.GET("/leaderboard", courseHandler.GetLeaderboard)
+			protected.GET("/payments/catalog", paymentHandler.GetCatalog)
+			protected.POST("/payments/checkout", paymentHandler.CreateCheckout)
+			protected.POST("/payments/orders/:id/confirm", paymentHandler.ConfirmCheckout)
 
 			// 需要认证的 AI 路由
 			protected.POST("/ai/chat", aiHandler.Chat)

@@ -742,6 +742,141 @@
             font-size: 0.82em;
             font-weight: 700;
         }
+        .payment-panel {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #eceeff;
+        }
+        .payment-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .payment-title {
+            color: #2a3049;
+            font-size: 1em;
+            font-weight: 800;
+        }
+        .payment-copy {
+            margin-top: 4px;
+            color: #7a829c;
+            font-size: 0.88em;
+            line-height: 1.55;
+        }
+        .payment-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .payment-pill {
+            border: 1px solid #dfe3ff;
+            background: #fff;
+            color: #55607f;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.84em;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .payment-pill.active {
+            background: linear-gradient(135deg, #667eea 0%, #8b78ff 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+        .payment-pill.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .payment-card {
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid #eceeff;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%);
+        }
+        .payment-card.active {
+            border-color: #b9c4ff;
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.12);
+        }
+        .payment-card-title {
+            color: #283049;
+            font-size: 0.97em;
+            font-weight: 800;
+        }
+        .payment-card-copy {
+            margin-top: 6px;
+            color: #707892;
+            font-size: 0.85em;
+            line-height: 1.55;
+        }
+        .payment-card-meta {
+            margin-top: 10px;
+            color: #5b6583;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+        .payment-section-title {
+            margin: 16px 0 10px;
+            color: #2f3650;
+            font-size: 0.95em;
+            font-weight: 800;
+        }
+        .payment-order-list {
+            display: grid;
+            gap: 10px;
+        }
+        .payment-order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid #eceeff;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+        }
+        .payment-order-title {
+            color: #283049;
+            font-size: 0.94em;
+            font-weight: 800;
+        }
+        .payment-order-meta {
+            margin-top: 6px;
+            color: #707892;
+            font-size: 0.84em;
+            line-height: 1.55;
+        }
+        .payment-status {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.8em;
+            font-weight: 800;
+        }
+        .payment-status.pending {
+            background: #fff3d8;
+            color: #9d6500;
+        }
+        .payment-status.paid {
+            background: #e7f8ec;
+            color: #1a7f41;
+        }
+        .payment-status.failed {
+            background: #ffe7e7;
+            color: #c0392b;
+        }
         .header-actions {
             display: flex;
             gap: 10px;
@@ -1187,6 +1322,9 @@
                 text-align: left;
                 grid-column: 2;
             }
+            .payment-grid {
+                grid-template-columns: 1fr;
+            }
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 14px;
@@ -1205,7 +1343,8 @@
             .rank-progress-bottom,
             .user-center-head,
             .achievement-wall-head,
-            .leaderboard-head {
+            .leaderboard-head,
+            .payment-head {
                 align-items: flex-start;
             }
             .course-detail-cover {
@@ -1448,6 +1587,24 @@
                         </div>
                         <div id="leaderboard-current" class="leaderboard-current">当前名次：--</div>
                         <div id="leaderboard-list" class="leaderboard-list"></div>
+                    </div>
+                    <div class="payment-panel">
+                        <div class="payment-head">
+                            <div>
+                                <div class="payment-title">支付中心</div>
+                                <div id="payment-copy" class="payment-copy">已预留多支付系统接口，当前优先接入 PayPal Sandbox。</div>
+                            </div>
+                        </div>
+                        <div class="payment-section-title">支付通道</div>
+                        <div id="payment-gateway-grid" class="payment-grid"></div>
+                        <div class="payment-section-title">币种切换</div>
+                        <div id="payment-currency-row" class="payment-pill-row"></div>
+                        <div class="payment-section-title">订阅与套餐</div>
+                        <div id="payment-plan-grid" class="payment-grid"></div>
+                        <div class="payment-section-title">当前订阅</div>
+                        <div id="payment-subscription-slot" class="payment-order-list"></div>
+                        <div class="payment-section-title">最近订单</div>
+                        <div id="payment-order-list" class="payment-order-list"></div>
                     </div>
                 </div>
                 <h2>选择课程</h2>
@@ -1729,6 +1886,10 @@
             global: null,
             friends: null,
         };
+        let paymentCatalog = null;
+        let selectedPaymentGateway = "paypal";
+        let selectedPaymentCurrency = "HKD";
+        let selectedPaymentPlan = "starter_monthly";
         let adminSelectedCourseId = null;
         let adminCourseEditingId = null;
         let adminLessonEditingId = null;
@@ -2002,6 +2163,231 @@
             }).join("");
         }
 
+        async function loadPaymentCatalog(forceRefresh = false) {
+            if (!token) {
+                paymentCatalog = null;
+                renderPaymentCenter();
+                return;
+            }
+            if (paymentCatalog && !forceRefresh) {
+                renderPaymentCenter();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/payments/catalog`, {
+                    headers: { "Authorization": `Bearer ${token}` },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) return;
+                paymentCatalog = data.catalog || null;
+                if (paymentCatalog?.gateways?.length) {
+                    const available = paymentCatalog.gateways.find((item) => item.code === selectedPaymentGateway && item.supportsCheckout);
+                    if (!available) {
+                        const firstAvailable = paymentCatalog.gateways.find((item) => item.supportsCheckout) || paymentCatalog.gateways[0];
+                        selectedPaymentGateway = firstAvailable?.code || "paypal";
+                    }
+                }
+                if (paymentCatalog?.supportedCurrencies?.length && !paymentCatalog.supportedCurrencies.includes(selectedPaymentCurrency)) {
+                    selectedPaymentCurrency = paymentCatalog.supportedCurrencies[0];
+                }
+                renderPaymentCenter();
+            } catch (_) {
+            }
+        }
+
+        function selectPaymentGateway(code) {
+            const gateway = (paymentCatalog?.gateways || []).find((item) => item.code === code);
+            if (!gateway || !gateway.supportsCheckout) return;
+            selectedPaymentGateway = code;
+            renderPaymentCenter();
+        }
+
+        function selectPaymentCurrency(currency) {
+            selectedPaymentCurrency = currency;
+            renderPaymentCenter();
+        }
+
+        function selectPaymentPlan(code) {
+            selectedPaymentPlan = code;
+            renderPaymentCenter();
+        }
+
+        function getSelectedPaymentPlan() {
+            return (paymentCatalog?.plans || []).find((item) => item.code === selectedPaymentPlan) || (paymentCatalog?.plans || [])[0] || null;
+        }
+
+        function getSelectedPlanPrice(plan) {
+            if (!plan) return null;
+            return (plan.prices || []).find((item) => item.currency === selectedPaymentCurrency) || plan.prices?.[0] || null;
+        }
+
+        function renderPaymentCenter() {
+            const gatewayGrid = document.getElementById("payment-gateway-grid");
+            const currencyRow = document.getElementById("payment-currency-row");
+            const planGrid = document.getElementById("payment-plan-grid");
+            const subscriptionSlot = document.getElementById("payment-subscription-slot");
+            const orderList = document.getElementById("payment-order-list");
+            const copyEl = document.getElementById("payment-copy");
+            if (!gatewayGrid || !currencyRow || !planGrid || !subscriptionSlot || !orderList || !copyEl) return;
+
+            if (!token) {
+                copyEl.textContent = "登录后可选择支付通道、币种和订阅套餐。";
+                gatewayGrid.innerHTML = `<div class="payment-card"><div class="payment-card-title">支付中心待解锁</div><div class="payment-card-copy">登录后即可查看多支付网关入口。</div></div>`;
+                currencyRow.innerHTML = "";
+                planGrid.innerHTML = "";
+                subscriptionSlot.innerHTML = `<div class="payment-order-item"><div><div class="payment-order-title">暂无订阅</div><div class="payment-order-meta">登录后会显示当前订阅状态。</div></div></div>`;
+                orderList.innerHTML = `<div class="payment-order-item"><div><div class="payment-order-title">暂无订单</div><div class="payment-order-meta">支付后最近订单会显示在这里。</div></div></div>`;
+                return;
+            }
+
+            if (!paymentCatalog) {
+                copyEl.textContent = "支付目录加载中...";
+                gatewayGrid.innerHTML = `<div class="payment-card"><div class="payment-card-title">支付目录加载中</div><div class="payment-card-copy">正在同步多支付网关配置。</div></div>`;
+                currencyRow.innerHTML = "";
+                planGrid.innerHTML = "";
+                subscriptionSlot.innerHTML = "";
+                orderList.innerHTML = "";
+                return;
+            }
+
+            copyEl.textContent = "多支付网关并行预留，哪个通道先下发就先切换哪个；当前优先联调 PayPal Sandbox。";
+            gatewayGrid.innerHTML = (paymentCatalog.gateways || []).map((gateway) => `
+                <div class="payment-card ${selectedPaymentGateway === gateway.code ? "active" : ""}">
+                    <div class="payment-card-title">${escapeHtml(gateway.name)}</div>
+                    <div class="payment-card-copy">${escapeHtml(gateway.note || "")}</div>
+                    <div class="payment-card-meta">状态：${escapeHtml(gateway.status || "reserved")} · 结算：${escapeHtml((gateway.settlementTargets || []).join(" / "))}</div>
+                    <div style="margin-top:12px">
+                        <button class="btn ${selectedPaymentGateway === gateway.code ? "btn-primary" : "btn-secondary"} btn-small" ${gateway.supportsCheckout ? `onclick="selectPaymentGateway('${escapeHtml(gateway.code)}')"` : "disabled"}>${gateway.supportsCheckout ? "选择通道" : "预留接口"}</button>
+                    </div>
+                </div>
+            `).join("");
+
+            currencyRow.innerHTML = (paymentCatalog.supportedCurrencies || []).map((currency) => `
+                <button class="payment-pill ${selectedPaymentCurrency === currency ? "active" : ""}" onclick="selectPaymentCurrency('${escapeHtml(currency)}')">${escapeHtml(currency)}</button>
+            `).join("");
+
+            planGrid.innerHTML = (paymentCatalog.plans || []).map((plan) => {
+                const price = getSelectedPlanPrice(plan);
+                const selected = selectedPaymentPlan === plan.code;
+                return `
+                    <div class="payment-card ${selected ? "active" : ""}">
+                        <div class="payment-card-title">${escapeHtml(plan.name)}</div>
+                        <div class="payment-card-copy">${escapeHtml(plan.description || "")}</div>
+                        <div class="payment-card-meta">${escapeHtml(price?.label || "暂未定价")} · ${escapeHtml(plan.productType || "subscription")}</div>
+                        <div class="payment-card-copy" style="margin-top:10px">${(plan.features || []).map((item) => `• ${escapeHtml(item)}`).join("<br>")}</div>
+                        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+                            <button class="btn ${selected ? "btn-primary" : "btn-secondary"} btn-small" onclick="selectPaymentPlan('${escapeHtml(plan.code)}')">${selected ? "当前选择" : "选择套餐"}</button>
+                            <button class="btn btn-primary btn-small" onclick="createPaymentCheckout('${escapeHtml(plan.code)}')">去支付</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            const sub = paymentCatalog.latestSubscription;
+            if (sub) {
+                subscriptionSlot.innerHTML = `
+                    <div class="payment-order-item">
+                        <div>
+                            <div class="payment-order-title">${escapeHtml(sub.planName)} · ${escapeHtml(sub.status)}</div>
+                            <div class="payment-order-meta">通道：${escapeHtml(sub.gateway)} · 币种：${escapeHtml(sub.currency)} ${escapeHtml(sub.amount)} · 周期：${escapeHtml(sub.billingCycle)}</div>
+                            <div class="payment-order-meta">有效期：${escapeHtml(formatDateTime(sub.currentPeriodStart))} - ${escapeHtml(formatDateTime(sub.currentPeriodEnd))}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                subscriptionSlot.innerHTML = `<div class="payment-order-item"><div><div class="payment-order-title">暂无有效订阅</div><div class="payment-order-meta">购买月付/季付套餐后，这里会显示你的订阅周期。</div></div></div>`;
+            }
+
+            const orders = paymentCatalog.orders || [];
+            if (!orders.length) {
+                orderList.innerHTML = `<div class="payment-order-item"><div><div class="payment-order-title">暂无订单</div><div class="payment-order-meta">创建支付订单后会显示在这里。</div></div></div>`;
+                return;
+            }
+
+            orderList.innerHTML = orders.map((order) => `
+                <div class="payment-order-item">
+                    <div>
+                        <div class="payment-order-title">${escapeHtml(order.planName || order.planCode)} · ${escapeHtml(order.currency)} ${escapeHtml(order.amount)}</div>
+                        <div class="payment-order-meta">通道：${escapeHtml(order.gateway)} · 类型：${escapeHtml(order.productType)} · 创建于：${escapeHtml(formatDateTime(order.createdAt))}</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end">
+                        <span class="payment-status ${getPaymentStatusClass(order.status)}">${escapeHtml(order.status || "created")}</span>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end">
+                            ${order.approvalUrl ? `<button class="btn btn-secondary btn-small" onclick="window.open('${escapeHtml(order.approvalUrl)}', '_blank')">打开 PayPal</button>` : ""}
+                            ${order.status !== "paid" ? `<button class="btn btn-primary btn-small" onclick="confirmPaymentOrder(${order.id})">确认支付</button>` : ""}
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        async function createPaymentCheckout(planCode) {
+            const plan = (paymentCatalog?.plans || []).find((item) => item.code === planCode) || getSelectedPaymentPlan();
+            const price = getSelectedPlanPrice(plan);
+            if (!plan || !price) {
+                alert("请选择可用的支付套餐和币种");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/payments/checkout`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: JSON.stringify({
+                        gateway: selectedPaymentGateway,
+                        planCode: plan.code,
+                        currency: price.currency,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    alert(data.error || "创建支付订单失败");
+                    return;
+                }
+                const checkout = data.checkout || {};
+                await loadPaymentCatalog(true);
+                alert(checkout.message || "支付订单已创建");
+                if (checkout.approvalUrl) {
+                    window.open(checkout.approvalUrl, "_blank");
+                }
+            } catch (e) {
+                alert(`支付网络错误：${e?.message || e}`);
+            }
+        }
+
+        async function confirmPaymentOrder(orderId) {
+            try {
+                const res = await fetch(`${API_BASE}/payments/orders/${orderId}/confirm`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    alert(data.error || "确认支付失败");
+                    return;
+                }
+                await loadPaymentCatalog(true);
+                alert(data.checkout?.message || "支付状态已更新");
+            } catch (e) {
+                alert(`确认支付失败：${e?.message || e}`);
+            }
+        }
+
+        function getPaymentStatusClass(status) {
+            const value = String(status || "").toLowerCase();
+            if (value === "paid") return "paid";
+            if (value === "failed") return "failed";
+            return "pending";
+        }
+
+        function formatDateTime(value) {
+            if (!value) return "--";
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return date.toLocaleString("zh-CN", { hour12: false });
+        }
+
         function clearCourseCoverPreviewObjectUrl() {
             if (!courseCoverPreviewObjectUrl) return;
             URL.revokeObjectURL(courseCoverPreviewObjectUrl);
@@ -2152,11 +2538,13 @@
             updateAdminEntry();
             renderUserCenter();
             renderLeaderboard();
+            renderPaymentCenter();
             chatHistory = [];
             document.getElementById("chat-messages").innerHTML = "";
             closeAllModals();
             loadCourses();
             loadLeaderboard("global");
+            loadPaymentCatalog();
         }
 
         function openAdminPage() {
@@ -2175,6 +2563,10 @@
             userStats = null;
             leaderboardState = { global: null, friends: null };
             leaderboardScope = "global";
+            paymentCatalog = null;
+            selectedPaymentGateway = "paypal";
+            selectedPaymentCurrency = "HKD";
+            selectedPaymentPlan = "starter_monthly";
             progressByLessonId = {};
             progressMetaByLessonId = {};
             courseProgressById = {};
