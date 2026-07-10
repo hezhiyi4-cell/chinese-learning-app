@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -60,19 +59,19 @@ func main() {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-		
+
 		c.Next()
 	})
 
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"status": "ok",
+			"status":  "ok",
 			"message": "Chinese Learning App Backend is running!",
 		})
 	})
@@ -113,7 +112,8 @@ func main() {
 			protected.GET("/progress", courseHandler.GetProgress)
 			protected.POST("/progress/:lessonId", courseHandler.UpdateProgress)
 			protected.GET("/stats", courseHandler.GetStats)
-			
+			protected.GET("/user/stats", courseHandler.GetStats)
+
 			// 需要认证的 AI 路由
 			protected.POST("/ai/chat", aiHandler.Chat)
 			protected.GET("/ai/scenes", aiHandler.GetScenes)

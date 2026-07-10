@@ -1,4 +1,3 @@
-
 package handlers
 
 import (
@@ -420,12 +419,12 @@ func (h *CourseHandler) UpdateProgress(c *gin.Context) {
 		return
 	}
 
-	progress, err := h.progressService.UpdateProgress(userID.(uint), uint(lessonID), req.Score)
+	result, err := h.progressService.UpdateProgress(userID.(uint), uint(lessonID), req.Score)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update progress"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"progress": progress})
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *CourseHandler) GetStats(c *gin.Context) {

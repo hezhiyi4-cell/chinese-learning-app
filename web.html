@@ -322,6 +322,10 @@
             background: linear-gradient(90deg, #667eea 0%, #8d7cf6 100%);
             box-shadow: 0 4px 14px rgba(102, 126, 234, 0.30);
         }
+        .progress-fill-gold {
+            background: linear-gradient(90deg, #ffbe3b 0%, #ff8a00 100%);
+            box-shadow: 0 4px 14px rgba(255, 167, 38, 0.28);
+        }
         .course-progress-footer {
             margin-top: 10px;
             display: flex;
@@ -434,6 +438,97 @@
         .user-info p {
             color: #666;
         }
+        .user-center-panel {
+            margin: 8px 0 24px;
+            padding: 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #f7f8ff 0%, #fff7f2 100%);
+            border: 1px solid #eceeff;
+        }
+        .user-center-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .user-center-title {
+            font-size: 1.05em;
+            font-weight: 800;
+            color: #27304a;
+        }
+        .rank-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ffe9b0 0%, #ffd76a 100%);
+            color: #7a4d00;
+            font-size: 0.92em;
+            font-weight: 800;
+            box-shadow: 0 8px 18px rgba(255, 193, 7, 0.16);
+        }
+        .user-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .user-stat-card {
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid #eceeff;
+            box-shadow: 0 10px 24px rgba(102, 126, 234, 0.08);
+        }
+        .user-stat-label {
+            color: #6c7188;
+            font-size: 0.88em;
+            font-weight: 700;
+        }
+        .user-stat-value {
+            margin-top: 6px;
+            color: #232946;
+            font-size: 1.42em;
+            font-weight: 800;
+        }
+        .user-stat-desc {
+            margin-top: 6px;
+            color: #7a8097;
+            font-size: 0.86em;
+        }
+        .rank-progress-panel {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid #eceeff;
+        }
+        .rank-progress-top,
+        .rank-progress-bottom {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .rank-progress-top {
+            margin-bottom: 10px;
+        }
+        .rank-progress-bottom {
+            margin-top: 10px;
+            color: #6d7389;
+            font-size: 0.88em;
+        }
+        .rank-progress-title {
+            color: #49506a;
+            font-weight: 800;
+        }
+        .rank-progress-copy {
+            color: #6170db;
+            font-weight: 700;
+        }
         .header-actions {
             display: flex;
             gap: 10px;
@@ -506,6 +601,82 @@
             inset: -30px -10px auto -10px;
             height: 120px;
             pointer-events: none;
+        }
+        .reward-float-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10000;
+        }
+        .reward-float {
+            position: fixed;
+            right: 28px;
+            top: 110px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(24, 29, 79, 0.88);
+            color: #fff;
+            font-size: 0.95em;
+            font-weight: 800;
+            box-shadow: 0 12px 28px rgba(25, 31, 86, 0.22);
+            animation: rewardFloatUp 1200ms ease-out forwards;
+            white-space: nowrap;
+        }
+        .reward-float.rank {
+            background: linear-gradient(135deg, rgba(255, 174, 0, 0.94) 0%, rgba(255, 114, 24, 0.94) 100%);
+        }
+        .rank-up-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(255, 225, 140, 0.24) 0%, rgba(24, 18, 56, 0.84) 68%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            padding: 20px;
+        }
+        .rank-up-overlay.hidden {
+            display: none;
+        }
+        .rank-up-card {
+            width: min(560px, 92vw);
+            padding: 34px 24px;
+            border-radius: 24px;
+            background: linear-gradient(180deg, #fffef8 0%, #fff6d9 100%);
+            text-align: center;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+            animation: rankPulse 900ms ease;
+        }
+        .rank-up-kicker {
+            color: #9a6a00;
+            font-size: 0.92em;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .rank-up-title {
+            margin-top: 12px;
+            color: #5f3d00;
+            font-size: 1.9em;
+            font-weight: 900;
+        }
+        .rank-up-copy {
+            margin-top: 12px;
+            color: #74551e;
+            font-size: 1.02em;
+            line-height: 1.7;
+        }
+        .rank-up-badge {
+            margin-top: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #8b5a00;
+            font-size: 1.08em;
+            font-weight: 900;
+            box-shadow: 0 14px 28px rgba(255, 183, 0, 0.18);
         }
         .confetti {
             position: absolute;
@@ -708,6 +879,16 @@
             0% { transform: translateY(0) rotate(0deg); opacity: 0.95; }
             100% { transform: translateY(140px) rotate(220deg); opacity: 0; }
         }
+        @keyframes rewardFloatUp {
+            0% { transform: translateY(12px) scale(0.92); opacity: 0; }
+            18% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-58px) scale(1.02); opacity: 0; }
+        }
+        @keyframes rankPulse {
+            0% { transform: scale(0.88); opacity: 0; }
+            45% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
         @media (max-width: 900px) {
             .admin-layout {
                 grid-template-columns: 1fr;
@@ -774,6 +955,9 @@
             .header-actions .btn {
                 flex: 1 1 160px;
             }
+            .user-stats-grid {
+                grid-template-columns: 1fr;
+            }
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 14px;
@@ -786,6 +970,11 @@
             }
             .course-progress-footer {
                 flex-direction: column;
+                align-items: flex-start;
+            }
+            .rank-progress-top,
+            .rank-progress-bottom,
+            .user-center-head {
                 align-items: flex-start;
             }
             .course-detail-cover {
@@ -887,6 +1076,12 @@
             .progress-bar {
                 height: 9px;
             }
+            .reward-float {
+                right: 14px;
+                top: 90px;
+                max-width: calc(100vw - 28px);
+                white-space: normal;
+            }
             .course-progress-header,
             .course-progress-footer {
                 gap: 6px;
@@ -965,6 +1160,42 @@
                     <div class="header-actions">
                         <button id="admin-entry-btn" class="btn btn-secondary hidden" onclick="openAdminPage()">课程管理</button>
                         <button class="btn btn-secondary" onclick="logout()">退出登录</button>
+                    </div>
+                </div>
+                <div id="user-center-panel" class="user-center-panel hidden">
+                    <div class="user-center-head">
+                        <div class="user-center-title">个人中心</div>
+                        <div id="user-rank-pill" class="rank-pill">青铜</div>
+                    </div>
+                    <div class="user-stats-grid">
+                        <div class="user-stat-card">
+                            <div class="user-stat-label">当前积分</div>
+                            <div id="user-total-xp" class="user-stat-value">0</div>
+                            <div id="user-total-xp-copy" class="user-stat-desc">完成课时即可获得积分</div>
+                        </div>
+                        <div class="user-stat-card">
+                            <div class="user-stat-label">当前段位</div>
+                            <div id="user-rank-name" class="user-stat-value">青铜</div>
+                            <div id="user-next-rank-copy" class="user-stat-desc">下一段位：白银</div>
+                        </div>
+                        <div class="user-stat-card">
+                            <div class="user-stat-label">连续打卡</div>
+                            <div id="user-streak-days" class="user-stat-value">0</div>
+                            <div class="user-stat-desc">连续学习可额外获得 +5 积分</div>
+                        </div>
+                    </div>
+                    <div class="rank-progress-panel">
+                        <div class="rank-progress-top">
+                            <span class="rank-progress-title">段位成长进度</span>
+                            <span id="user-rank-progress-copy" class="rank-progress-copy">距离下一段位还差 0 积分</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="user-rank-progress-fill" class="progress-fill" style="width:0%"></div>
+                        </div>
+                        <div class="rank-progress-bottom">
+                            <span id="user-rank-progress-min">0 积分</span>
+                            <span id="user-rank-progress-max">60 积分</span>
+                        </div>
                     </div>
                 </div>
                 <h2>选择课程</h2>
@@ -1098,6 +1329,17 @@
         </div>
     </div>
 
+    <div id="reward-float-layer" class="reward-float-layer"></div>
+
+    <div id="rank-up-overlay" class="rank-up-overlay hidden">
+        <div class="rank-up-card">
+            <div class="rank-up-kicker">RANK UP</div>
+            <div class="rank-up-title">段位晋升成功</div>
+            <div id="rank-up-copy" class="rank-up-copy">你已经晋升到新段位，继续保持学习节奏。</div>
+            <div id="rank-up-badge" class="rank-up-badge">青铜 → 白银</div>
+        </div>
+    </div>
+
     <div id="course-modal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="panel-header">
@@ -1227,7 +1469,9 @@
         let chatHistory = [];
         let courseDetailsById = {};
         let progressByLessonId = {};
+        let progressMetaByLessonId = {};
         let courseProgressById = {};
+        let userStats = null;
         let adminSelectedCourseId = null;
         let adminCourseEditingId = null;
         let adminLessonEditingId = null;
@@ -1287,17 +1531,26 @@
             const stat = courseProgressById[course.id];
             let total = stat?.total ?? 0;
             let completed = stat?.completed ?? 0;
+            let perfected = stat?.perfected ?? 0;
+            let earnedXp = stat?.earnedXp ?? 0;
+            let totalXp = stat?.totalXp ?? 0;
 
             if (!total) {
                 const detail = courseDetailsById[course.id];
                 const lessons = detail?.lessons || [];
                 total = lessons.length;
                 completed = lessons.filter((lesson) => isLessonCompleted(lesson.id)).length;
+                perfected = lessons.filter((lesson) => isLessonPerfected(lesson.id)).length;
+                earnedXp = (completed * 10) + (perfected * 5);
+                totalXp = total * 15;
             }
 
             const safeTotal = Math.max(0, total);
             const safeCompleted = Math.min(Math.max(0, completed), safeTotal || completed);
             const percent = safeTotal > 0 ? Math.round((safeCompleted / safeTotal) * 100) : 0;
+            const safeTotalXp = Math.max(0, totalXp);
+            const safeEarnedXp = Math.min(Math.max(0, earnedXp), safeTotalXp || earnedXp);
+            const xpPercent = safeTotalXp > 0 ? Math.round((safeEarnedXp / safeTotalXp) * 100) : 0;
             let statusText = "还没开始";
             if (safeTotal > 0 && safeCompleted === safeTotal) {
                 statusText = "已全部完成";
@@ -1309,8 +1562,67 @@
                 total: safeTotal,
                 completed: safeCompleted,
                 percent,
+                perfected,
+                earnedXp: safeEarnedXp,
+                totalXp: safeTotalXp,
+                xpPercent,
                 statusText,
             };
+        }
+
+        function applyStatsData(stats) {
+            userStats = stats || null;
+            courseProgressById = {};
+            const items = stats?.courseProgress || [];
+            items.forEach((it) => {
+                if (!it || !it.courseId) return;
+                courseProgressById[it.courseId] = {
+                    completed: it.completed ?? 0,
+                    perfected: it.perfected ?? 0,
+                    total: it.total ?? 0,
+                    earnedXp: it.earnedXp ?? 0,
+                    totalXp: it.totalXp ?? 0,
+                };
+            });
+
+            if (user && stats?.rank) {
+                user.rank = stats.rank;
+                user.totalXp = stats.totalXP ?? stats.totalXp ?? 0;
+                user.currentStreak = stats.currentStreak ?? 0;
+                localStorage.setItem("user", JSON.stringify(user));
+            }
+
+            renderUserCenter();
+        }
+
+        function renderUserCenter() {
+            const panel = document.getElementById("user-center-panel");
+            if (!panel) return;
+            if (!token || !userStats) {
+                panel.classList.add("hidden");
+                return;
+            }
+
+            panel.classList.remove("hidden");
+            const totalXp = userStats.totalXP ?? 0;
+            const rank = userStats.rank || "青铜";
+            const nextRank = userStats.nextRank || rank;
+            const streakDays = userStats.currentStreak ?? 0;
+            const progress = userStats.rankProgress ?? 0;
+            const minXp = userStats.currentRankMinXp ?? 0;
+            const maxXp = userStats.nextRankMinXp ?? minXp;
+            const xpToNext = userStats.xpToNextRank ?? 0;
+
+            document.getElementById("user-rank-pill").textContent = `${rank} 段位`;
+            document.getElementById("user-total-xp").textContent = totalXp;
+            document.getElementById("user-total-xp-copy").textContent = `已完成 ${userStats.completed ?? 0} / ${userStats.totalLessons ?? 0} 节课`;
+            document.getElementById("user-rank-name").textContent = rank;
+            document.getElementById("user-next-rank-copy").textContent = xpToNext > 0 ? `下一段位：${nextRank}` : "已达到最高段位";
+            document.getElementById("user-streak-days").textContent = streakDays;
+            document.getElementById("user-rank-progress-fill").style.width = `${Math.max(0, Math.min(100, progress))}%`;
+            document.getElementById("user-rank-progress-min").textContent = `${minXp} 积分`;
+            document.getElementById("user-rank-progress-max").textContent = xpToNext > 0 ? `${maxXp} 积分` : "满级";
+            document.getElementById("user-rank-progress-copy").textContent = xpToNext > 0 ? `距离 ${nextRank} 还差 ${xpToNext} 积分` : "你已达到当前最高段位";
         }
 
         function clearCourseCoverPreviewObjectUrl() {
@@ -1461,6 +1773,7 @@
                 document.getElementById("user-nickname").textContent = user.nickname || user.email || "学习者";
             }
             updateAdminEntry();
+            renderUserCenter();
             chatHistory = [];
             document.getElementById("chat-messages").innerHTML = "";
             closeAllModals();
@@ -1480,6 +1793,10 @@
             localStorage.removeItem("user");
             token = null;
             user = null;
+            userStats = null;
+            progressByLessonId = {};
+            progressMetaByLessonId = {};
+            courseProgressById = {};
             adminSelectedCourseId = null;
             showRegister();
         }
@@ -1588,6 +1905,7 @@
 
         async function loadUserProgress() {
             progressByLessonId = {};
+            progressMetaByLessonId = {};
             if (!token) return;
 
             try {
@@ -1600,6 +1918,10 @@
                 progress.forEach((p) => {
                     if (!p || !p.lessonId) return;
                     progressByLessonId[p.lessonId] = p.status || "pending";
+                    progressMetaByLessonId[p.lessonId] = {
+                        status: p.status || "pending",
+                        score: p.score ?? 0,
+                    };
                 });
             } catch (_) {
             }
@@ -1607,19 +1929,19 @@
 
         async function loadStats() {
             courseProgressById = {};
-            if (!token) return;
+            if (!token) {
+                userStats = null;
+                renderUserCenter();
+                return;
+            }
 
             try {
-                const res = await fetch(`${API_BASE}/stats`, {
+                const res = await fetch(`${API_BASE}/user/stats`, {
                     headers: { "Authorization": `Bearer ${token}` },
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) return;
-                const items = data.stats?.courseProgress || [];
-                items.forEach((it) => {
-                    if (!it || !it.courseId) return;
-                    courseProgressById[it.courseId] = { completed: it.completed ?? 0, total: it.total ?? 0 };
-                });
+                applyStatsData(data.stats || null);
             } catch (_) {
             }
         }
@@ -1668,6 +1990,19 @@
                                     <span>${progress.total > 0 ? `已完成 ${progress.completed} / ${progress.total}` : "等待课程内容"}</span>
                                 </div>
                             </div>
+                            <div class="course-card-progress">
+                                <div class="course-progress-header">
+                                    <span class="course-progress-label">经验进度</span>
+                                    <span class="course-progress-value">${progress.earnedXp} / ${progress.totalXp || 0}</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill progress-fill-gold" style="width:${progress.xpPercent}%"></div>
+                                </div>
+                                <div class="course-progress-footer">
+                                    <span class="course-progress-status">${progress.perfected} 节完美通关</span>
+                                    <span>${progress.totalXp > 0 ? `已获得 ${progress.earnedXp} 积分` : "等待课程内容"}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1679,7 +2014,12 @@
             return status === "completed" || status === "perfected";
         }
 
+        function isLessonPerfected(lessonId) {
+            return progressByLessonId[lessonId] === "perfected";
+        }
+
         function getLessonStatusLabel(lessonId) {
+            if (isLessonPerfected(lessonId)) return "🌟 完美通关";
             return isLessonCompleted(lessonId) ? "✅ 已完成" : "⏳ 待学习";
         }
 
@@ -1864,19 +2204,30 @@
                 }
                 const status = data.progress?.status || "completed";
                 progressByLessonId[currentLessonId] = status;
+                progressMetaByLessonId[currentLessonId] = {
+                    status,
+                    score: data.progress?.score ?? 100,
+                };
                 const msg = pick([
                     "做得很好！保持这个节奏，下一课会更轻松。",
                     "太棒了！你已经在稳步进步，继续加油！",
                     "完成得很漂亮！每天一点点，中文会越来越顺。",
                     "很好！建议把这课再读一遍，加深记忆。",
                 ]);
+                if (data.stats) {
+                    applyStatsData(data.stats);
+                }
                 showCelebration(msg);
-                await Promise.all([loadUserProgress(), loadStats()]);
+                showRewardFloats(data.rewards || []);
+                if (data.rankUp) {
+                    showRankPromotion(data.previousRank || "青铜", data.rank || userStats?.rank || "白银");
+                }
+                await Promise.all([loadUserProgress(), data.stats ? Promise.resolve() : loadStats()]);
                 renderCourseCards();
                 renderLessonList();
                 backToLessons();
             } catch (e) {
-                alert("网络错误，请确保后端运行在 http://localhost:8080");
+                alert(`网络错误：${e?.message || e}\nAPI_BASE: ${API_BASE}`);
             }
         }
 
@@ -2507,6 +2858,34 @@
             setTimeout(() => {
                 overlay.classList.add("hidden");
             }, 1050);
+        }
+
+        function showRewardFloats(rewards) {
+            const layer = document.getElementById("reward-float-layer");
+            if (!layer || !Array.isArray(rewards) || rewards.length === 0) return;
+
+            rewards.forEach((reward, index) => {
+                const el = document.createElement("div");
+                const type = reward?.type === "streak_bonus" ? " rank" : "";
+                const points = Number(reward?.points || 0);
+                el.className = `reward-float${type}`;
+                el.style.top = `${110 + index * 52}px`;
+                el.textContent = `+${points} ${reward?.label || "积分"}`;
+                layer.appendChild(el);
+                setTimeout(() => el.remove(), 1300);
+            });
+        }
+
+        function showRankPromotion(previousRank, nextRank) {
+            const overlay = document.getElementById("rank-up-overlay");
+            if (!overlay) return;
+
+            document.getElementById("rank-up-copy").textContent = `恭喜你从 ${previousRank} 晋升到 ${nextRank}，继续学习就能冲击更高段位。`;
+            document.getElementById("rank-up-badge").textContent = `${previousRank} → ${nextRank}`;
+            overlay.classList.remove("hidden");
+            setTimeout(() => {
+                overlay.classList.add("hidden");
+            }, 2200);
         }
 
         async function sendToAI() {
