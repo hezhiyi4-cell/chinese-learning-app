@@ -437,6 +437,19 @@ func (h *CourseHandler) GetStats(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"stats": stats})
 }
 
+func (h *CourseHandler) GetLeaderboard(c *gin.Context) {
+	userID, _ := c.Get("userId")
+	scope := c.DefaultQuery("scope", "global")
+
+	leaderboard, err := h.progressService.GetLeaderboard(userID.(uint), scope)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch leaderboard"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"leaderboard": leaderboard})
+}
+
 func servicesCourseFromRequest(req CreateCourseRequest) *models.Course {
 	return &models.Course{
 		Title:       req.Title,

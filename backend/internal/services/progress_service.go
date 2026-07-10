@@ -56,6 +56,26 @@ type StatsResponse struct {
 	Achievements     []AchievementItem    `json:"achievements"`
 }
 
+type LeaderboardEntry struct {
+	Position         int    `json:"position"`
+	UserID           uint   `json:"userId"`
+	Nickname         string `json:"nickname"`
+	Rank             string `json:"rank"`
+	TotalXP          int    `json:"totalXP"`
+	Completed        int    `json:"completed"`
+	PerfectedLessons int    `json:"perfectedLessons"`
+	BestStreak       int    `json:"bestStreak"`
+	IsCurrentUser    bool   `json:"isCurrentUser"`
+}
+
+type LeaderboardResponse struct {
+	Scope           string             `json:"scope"`
+	Title           string             `json:"title"`
+	Note            string             `json:"note"`
+	CurrentUserRank int                `json:"currentUserRank"`
+	Entries         []LeaderboardEntry `json:"entries"`
+}
+
 type CourseProgressItem struct {
 	CourseID  uint `json:"courseId"`
 	Completed int  `json:"completed"`
@@ -292,6 +312,70 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 	return s.buildStatsFromSnapshot(progressList, user)
 }
 
+func (s *ProgressService) GetLeaderboard(userID uint, scope string) (*LeaderboardResponse, error) {
+	users, err := s.userRepo.ListNonAdminUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]LeaderboardEntry, 0, len(users))
+	currentUserRank := 0
+
+	for _, user := range users {
+		progressList, err := s.progressRepo.GetAllByUser(user.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		stats, err := s.buildStatsFromSnapshot(progressList, &user)
+		if err != nil {
+			return nil, err
+		}
+
+		entry := LeaderboardEntry{
+			UserID:           user.ID,
+			Nickname:         displayName(user),
+			Rank:             stats.Rank,
+			TotalXP:          stats.TotalXP,
+			Completed:        stats.Completed,
+			PerfectedLessons: stats.PerfectedLessons,
+			BestStreak:       stats.BestStreak,
+			IsCurrentUser:    user.ID == userID,
+		}
+		entries = append(entries, entry)
+	}
+
+	sortLeaderboard(entries)
+	for i := range entries {
+		entries[i].Position = i + 1
+		if entries[i].UserID == userID {
+			currentUserRank = entries[i].Position
+		}
+	}
+
+	normalizedScope := scope
+	if normalizedScope != "friends" {
+		normalizedScope = "global"
+	}
+
+	response := &LeaderboardResponse{
+		Scope:           normalizedScope,
+		CurrentUserRank: currentUserRank,
+	}
+
+	if normalizedScope == "friends" {
+		response.Title = "好友榜"
+		response.Note = "当前版本暂未接入真实好友关系，这里先展示与你积分接近的学习搭子榜。"
+		response.Entries = selectNearbyEntries(entries, userID, 5)
+		return response, nil
+	}
+
+	response.Title = "全球榜"
+	response.Note = "按积分、最佳连击和学习完成度综合排序。"
+	response.Entries = takeEntries(entries, 10)
+	return response, nil
+}
+
 func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgress, user *models.User) (*StatsResponse, error) {
 	progressByLessonID := map[uint]models.UserProgress{}
 	for _, p := range progressList {
@@ -524,4 +608,77 @@ func deriveXPFromProgressList(progressList []models.UserProgress) int {
 		}
 	}
 	return total
+}
+
+func displayName(user models.User) string {
+	if user.Nickname != "" {
+		return user.Nickname
+	}
+	if user.Email != "" {
+		return user.Email
+	}
+	return "学习者"
+}
+
+func sortLeaderboard(entries []LeaderboardEntry) {
+	for i := 0; i < len(entries); i++ {
+		for j := i + 1; j < len(entries); j++ {
+			if shouldSwap(entries[i], entries[j]) {
+				entries[i], entries[j] = entries[j], entries[i]
+			}
+		}
+	}
+}
+
+func shouldSwap(left, right LeaderboardEntry) bool {
+	if right.TotalXP != left.TotalXP {
+		return right.TotalXP > left.TotalXP
+	}
+	if right.BestStreak != left.BestStreak {
+		return right.BestStreak > left.BestStreak
+	}
+	if right.Completed != left.Completed {
+		return right.Completed > left.Completed
+	}
+	if right.PerfectedLessons != left.PerfectedLessons {
+		return right.PerfectedLessons > left.PerfectedLessons
+	}
+	return right.UserID < left.UserID
+}
+
+func takeEntries(entries []LeaderboardEntry, limit int) []LeaderboardEntry {
+	if len(entries) <= limit {
+		return entries
+	}
+	return entries[:limit]
+}
+
+func selectNearbyEntries(entries []LeaderboardEntry, userID uint, window int) []LeaderboardEntry {
+	if len(entries) <= window {
+		return entries
+	}
+
+	currentIndex := -1
+	for i, entry := range entries {
+		if entry.UserID == userID {
+			currentIndex = i
+			break
+		}
+	}
+
+	if currentIndex == -1 {
+		return takeEntries(entries, window)
+	}
+
+	half := window / 2
+	start := currentIndex - half
+	if start < 0 {
+		start = 0
+	}
+	end := start + window
+	if end > len(entries) {
+		end = len(entries)
+		start = maxInt(0, end-window)
+	}
+	return entries[start:end]
 }

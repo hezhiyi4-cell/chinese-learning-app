@@ -1,4 +1,3 @@
-
 package repositories
 
 import (
@@ -47,4 +46,18 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 
 func (r *UserRepository) Update(user *models.User) error {
 	return r.db.Save(user).Error
+}
+
+func (r *UserRepository) ListNonAdminUsers() ([]models.User, error) {
+	var users []models.User
+	err := r.db.
+		Where("role <> ?", "admin").
+		Order("total_xp DESC").
+		Order("best_streak DESC").
+		Order("updated_at ASC").
+		Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }

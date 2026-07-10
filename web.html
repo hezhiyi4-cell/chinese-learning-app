@@ -616,6 +616,132 @@
             z-index: 10002;
             text-align: center;
         }
+        .leaderboard-panel {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid #eceeff;
+        }
+        .leaderboard-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .leaderboard-title {
+            color: #2a3049;
+            font-size: 1em;
+            font-weight: 800;
+        }
+        .leaderboard-copy {
+            margin-top: 4px;
+            color: #7b839d;
+            font-size: 0.88em;
+            line-height: 1.55;
+        }
+        .leaderboard-tabs {
+            display: inline-flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .leaderboard-tab {
+            border: 1px solid #dfe3ff;
+            background: #fff;
+            color: #54607f;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.86em;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .leaderboard-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #8b78ff 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 10px 22px rgba(102, 126, 234, 0.18);
+        }
+        .leaderboard-current {
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f5f7ff 0%, #fff8ef 100%);
+            border: 1px solid #eceeff;
+            color: #4f5878;
+            font-weight: 700;
+        }
+        .leaderboard-list {
+            display: grid;
+            gap: 10px;
+        }
+        .leaderboard-item {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid #eceeff;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+        }
+        .leaderboard-item.current {
+            border-color: #b9c4ff;
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.12);
+        }
+        .leaderboard-position {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.96em;
+            font-weight: 900;
+            color: #55607f;
+            background: #f0f3ff;
+        }
+        .leaderboard-position.top-1 {
+            background: linear-gradient(135deg, #ffe08a 0%, #ffc04d 100%);
+            color: #7f4d00;
+        }
+        .leaderboard-position.top-2 {
+            background: linear-gradient(135deg, #edf1ff 0%, #cfd8ff 100%);
+            color: #4b5a87;
+        }
+        .leaderboard-position.top-3 {
+            background: linear-gradient(135deg, #ffe6d4 0%, #ffc392 100%);
+            color: #8a4c1d;
+        }
+        .leaderboard-main {
+            min-width: 0;
+        }
+        .leaderboard-name {
+            color: #2a314a;
+            font-size: 0.97em;
+            font-weight: 800;
+        }
+        .leaderboard-meta {
+            margin-top: 5px;
+            color: #6f7792;
+            font-size: 0.84em;
+            line-height: 1.55;
+        }
+        .leaderboard-score {
+            text-align: right;
+        }
+        .leaderboard-xp {
+            color: #25304c;
+            font-size: 1.05em;
+            font-weight: 900;
+        }
+        .leaderboard-rank {
+            margin-top: 4px;
+            color: #6d7490;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
         .header-actions {
             display: flex;
             gap: 10px;
@@ -1054,6 +1180,13 @@
             .achievement-grid {
                 grid-template-columns: 1fr;
             }
+            .leaderboard-item {
+                grid-template-columns: 44px minmax(0, 1fr);
+            }
+            .leaderboard-score {
+                text-align: left;
+                grid-column: 2;
+            }
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 14px;
@@ -1071,7 +1204,8 @@
             .rank-progress-top,
             .rank-progress-bottom,
             .user-center-head,
-            .achievement-wall-head {
+            .achievement-wall-head,
+            .leaderboard-head {
                 align-items: flex-start;
             }
             .course-detail-cover {
@@ -1300,6 +1434,20 @@
                             <div id="achievement-wall-copy" class="achievement-wall-copy">完成学习目标即可解锁新勋章</div>
                         </div>
                         <div id="achievement-grid" class="achievement-grid"></div>
+                    </div>
+                    <div class="leaderboard-panel">
+                        <div class="leaderboard-head">
+                            <div>
+                                <div class="leaderboard-title">排行榜</div>
+                                <div id="leaderboard-copy" class="leaderboard-copy">登录后可查看全球榜与好友榜</div>
+                            </div>
+                            <div class="leaderboard-tabs">
+                                <button id="leaderboard-tab-global" class="leaderboard-tab active" onclick="switchLeaderboard('global')">全球榜</button>
+                                <button id="leaderboard-tab-friends" class="leaderboard-tab" onclick="switchLeaderboard('friends')">好友榜</button>
+                            </div>
+                        </div>
+                        <div id="leaderboard-current" class="leaderboard-current">当前名次：--</div>
+                        <div id="leaderboard-list" class="leaderboard-list"></div>
                     </div>
                 </div>
                 <h2>选择课程</h2>
@@ -1576,6 +1724,11 @@
         let progressMetaByLessonId = {};
         let courseProgressById = {};
         let userStats = null;
+        let leaderboardScope = "global";
+        let leaderboardState = {
+            global: null,
+            friends: null,
+        };
         let adminSelectedCourseId = null;
         let adminCourseEditingId = null;
         let adminLessonEditingId = null;
@@ -1757,6 +1910,98 @@
             }).join("");
         }
 
+        function switchLeaderboard(scope) {
+            leaderboardScope = scope === "friends" ? "friends" : "global";
+            updateLeaderboardTabs();
+            renderLeaderboard();
+            if (!leaderboardState[leaderboardScope]) {
+                loadLeaderboard(leaderboardScope);
+            }
+        }
+
+        function updateLeaderboardTabs() {
+            document.getElementById("leaderboard-tab-global")?.classList.toggle("active", leaderboardScope === "global");
+            document.getElementById("leaderboard-tab-friends")?.classList.toggle("active", leaderboardScope === "friends");
+        }
+
+        async function loadLeaderboard(scope = leaderboardScope, forceRefresh = false) {
+            if (!token) {
+                leaderboardState = { global: null, friends: null };
+                renderLeaderboard();
+                return;
+            }
+
+            const normalizedScope = scope === "friends" ? "friends" : "global";
+            if (!forceRefresh && leaderboardState[normalizedScope]) {
+                if (normalizedScope === leaderboardScope) {
+                    renderLeaderboard();
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/leaderboard?scope=${normalizedScope}`, {
+                    headers: { "Authorization": `Bearer ${token}` },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) return;
+                leaderboardState[normalizedScope] = data.leaderboard || null;
+                if (normalizedScope === leaderboardScope) {
+                    renderLeaderboard();
+                }
+            } catch (_) {
+            }
+        }
+
+        function renderLeaderboard() {
+            updateLeaderboardTabs();
+            const current = leaderboardState[leaderboardScope];
+            const copyEl = document.getElementById("leaderboard-copy");
+            const currentEl = document.getElementById("leaderboard-current");
+            const listEl = document.getElementById("leaderboard-list");
+            if (!copyEl || !currentEl || !listEl) return;
+
+            if (!token) {
+                copyEl.textContent = "登录后可查看全球榜与好友榜";
+                currentEl.textContent = "当前名次：--";
+                listEl.innerHTML = `<div class="achievement-card"><div class="achievement-name">排行榜待解锁</div><div class="achievement-desc">登录后会显示你的实时名次和学习搭子榜单。</div></div>`;
+                return;
+            }
+
+            if (!current) {
+                copyEl.textContent = "榜单加载中...";
+                currentEl.textContent = "当前名次：加载中";
+                listEl.innerHTML = `<div class="achievement-card"><div class="achievement-name">排行榜加载中</div><div class="achievement-desc">正在同步最新积分与段位数据。</div></div>`;
+                return;
+            }
+
+            copyEl.textContent = current.note || "按积分、连击和完成度综合排序。";
+            currentEl.textContent = current.currentUserRank > 0 ? `当前名次：第 ${current.currentUserRank} 名` : "当前名次：暂未上榜";
+
+            const entries = current.entries || [];
+            if (entries.length === 0) {
+                listEl.innerHTML = `<div class="achievement-card"><div class="achievement-name">榜单暂时为空</div><div class="achievement-desc">等有更多学习记录后，这里会显示最新排名。</div></div>`;
+                return;
+            }
+
+            listEl.innerHTML = entries.map((entry) => {
+                const positionClass = entry.position <= 3 ? `top-${entry.position}` : "";
+                return `
+                    <div class="leaderboard-item ${entry.isCurrentUser ? "current" : ""}">
+                        <div class="leaderboard-position ${positionClass}">${entry.position}</div>
+                        <div class="leaderboard-main">
+                            <div class="leaderboard-name">${escapeHtml(entry.nickname || "学习者")}${entry.isCurrentUser ? ' · 我' : ''}</div>
+                            <div class="leaderboard-meta">已完成 ${entry.completed ?? 0} 节 · 完美通关 ${entry.perfectedLessons ?? 0} 次 · 最佳连击 ${entry.bestStreak ?? 0} 天</div>
+                        </div>
+                        <div class="leaderboard-score">
+                            <div class="leaderboard-xp">${entry.totalXP ?? 0} XP</div>
+                            <div class="leaderboard-rank">${escapeHtml(entry.rank || "青铜")}</div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
         function clearCourseCoverPreviewObjectUrl() {
             if (!courseCoverPreviewObjectUrl) return;
             URL.revokeObjectURL(courseCoverPreviewObjectUrl);
@@ -1906,10 +2151,12 @@
             }
             updateAdminEntry();
             renderUserCenter();
+            renderLeaderboard();
             chatHistory = [];
             document.getElementById("chat-messages").innerHTML = "";
             closeAllModals();
             loadCourses();
+            loadLeaderboard("global");
         }
 
         function openAdminPage() {
@@ -1926,6 +2173,8 @@
             token = null;
             user = null;
             userStats = null;
+            leaderboardState = { global: null, friends: null };
+            leaderboardScope = "global";
             progressByLessonId = {};
             progressMetaByLessonId = {};
             courseProgressById = {};
@@ -2355,7 +2604,8 @@
                 if (data.rankUp) {
                     showRankPromotion(data.previousRank || "青铜", data.rank || userStats?.rank || "白银");
                 }
-                await Promise.all([loadUserProgress(), data.stats ? Promise.resolve() : loadStats()]);
+                leaderboardState = { global: null, friends: null };
+                await Promise.all([loadUserProgress(), data.stats ? Promise.resolve() : loadStats(), loadLeaderboard(leaderboardScope, true)]);
                 renderCourseCards();
                 renderLessonList();
                 backToLessons();

@@ -113,6 +113,7 @@ func main() {
 			protected.POST("/progress/:lessonId", courseHandler.UpdateProgress)
 			protected.GET("/stats", courseHandler.GetStats)
 			protected.GET("/user/stats", courseHandler.GetStats)
+			protected.GET("/leaderboard", courseHandler.GetLeaderboard)
 
 			// 需要认证的 AI 路由
 			protected.POST("/ai/chat", aiHandler.Chat)
