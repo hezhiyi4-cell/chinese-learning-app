@@ -1504,7 +1504,7 @@
                     alert(data.message || data.error || "注册失败，请重试");
                 }
             } catch (e) {
-                alert("网络错误，请确保后端运行在 http://localhost:8080");
+                alert(`网络错误：${e?.message || e}\nAPI_BASE: ${API_BASE}`);
             }
         }
 
@@ -1531,7 +1531,7 @@
                     alert(data.message || data.error || "登录失败，请检查账号密码");
                 }
             } catch (e) {
-                alert("网络错误，请确保后端运行在 http://localhost:8080");
+                alert(`网络错误：${e?.message || e}\nAPI_BASE: ${API_BASE}`);
             }
         }
 
@@ -1566,7 +1566,7 @@
                 ]);
                 renderCourseCards();
             } catch (e) {
-                container.innerHTML = "<p style='color:red'>加载失败，请确保后端运行在 http://localhost:8080</p>";
+                container.innerHTML = `<p style='color:red'>加载失败：${escapeHtml(e?.message || String(e))}<br>API_BASE: ${escapeHtml(API_BASE)}</p>`;
             }
         }
 
