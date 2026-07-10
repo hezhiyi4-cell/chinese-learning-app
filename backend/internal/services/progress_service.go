@@ -27,18 +27,33 @@ type RewardItem struct {
 	Points int    `json:"points"`
 }
 
+type AchievementItem struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+	Category    string `json:"category"`
+	Unlocked    bool   `json:"unlocked"`
+	Progress    int    `json:"progress"`
+	Target      int    `json:"target"`
+}
+
 type StatsResponse struct {
 	TotalLessons     int                  `json:"totalLessons"`
 	Completed        int                  `json:"completed"`
+	PerfectedLessons int                  `json:"perfectedLessons"`
+	CompletedCourses int                  `json:"completedCourses"`
 	TotalXP          int                  `json:"totalXP"`
 	Rank             string               `json:"rank"`
 	RankProgress     int                  `json:"rankProgress"`
 	CurrentStreak    int                  `json:"currentStreak"`
+	BestStreak       int                  `json:"bestStreak"`
 	NextRank         string               `json:"nextRank"`
 	CurrentRankMinXP int                  `json:"currentRankMinXp"`
 	NextRankMinXP    int                  `json:"nextRankMinXp"`
 	XPToNextRank     int                  `json:"xpToNextRank"`
 	CourseProgress   []CourseProgressItem `json:"courseProgress"`
+	Achievements     []AchievementItem    `json:"achievements"`
 }
 
 type CourseProgressItem struct {
@@ -51,14 +66,15 @@ type CourseProgressItem struct {
 }
 
 type ProgressUpdateResponse struct {
-	Progress      *models.UserProgress `json:"progress"`
-	Rewards       []RewardItem         `json:"rewards"`
-	TotalXP       int                  `json:"totalXp"`
-	Rank          string               `json:"rank"`
-	PreviousRank  string               `json:"previousRank"`
-	RankUp        bool                 `json:"rankUp"`
-	CurrentStreak int                  `json:"currentStreak"`
-	Stats         *StatsResponse       `json:"stats"`
+	Progress        *models.UserProgress `json:"progress"`
+	Rewards         []RewardItem         `json:"rewards"`
+	NewAchievements []AchievementItem    `json:"newAchievements"`
+	TotalXP         int                  `json:"totalXp"`
+	Rank            string               `json:"rank"`
+	PreviousRank    string               `json:"previousRank"`
+	RankUp          bool                 `json:"rankUp"`
+	CurrentStreak   int                  `json:"currentStreak"`
+	Stats           *StatsResponse       `json:"stats"`
 }
 
 type rankTier struct {
@@ -145,10 +161,27 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 	if err != nil {
 		return nil, err
 	}
+	updatedProgressList, err := s.progressRepo.GetAllByUser(userID)
+	if err != nil {
+		return nil, err
+	}
 
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		return nil, err
+	}
+
+	var previousStats *StatsResponse
+	if user != nil {
+		previousUser := *user
+		previousUser.TotalXP = maxInt(previousUser.TotalXP, deriveXPFromProgressList(priorProgressList))
+		if previousUser.BestStreak < previousUser.CurrentStreak {
+			previousUser.BestStreak = previousUser.CurrentStreak
+		}
+		previousStats, err = s.buildStatsFromSnapshot(priorProgressList, &previousUser)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	rewards := make([]RewardItem, 0, 3)
@@ -169,11 +202,13 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 		if user.TotalXP < baselineXP {
 			user.TotalXP = baselineXP
 		}
+		if user.BestStreak < user.CurrentStreak {
+			user.BestStreak = user.CurrentStreak
+		}
 		totalXP = user.TotalXP
 		currentStreak = user.CurrentStreak
 		previousRank = currentRankName(user.TotalXP, user.Rank)
 
-		// 仅在本次学习有实质进展时结算打卡与积分。
 		if len(rewards) > 0 {
 			now := time.Now()
 			today := startOfDay(now)
@@ -199,6 +234,10 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 				}
 			}
 
+			if user.CurrentStreak > user.BestStreak {
+				user.BestStreak = user.CurrentStreak
+			}
+
 			gainedXP := sumRewardPoints(rewards)
 			if gainedXP > 0 {
 				user.TotalXP += gainedXP
@@ -217,7 +256,7 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 		}
 	}
 
-	stats, err := s.GetUserStats(userID)
+	stats, err := s.buildStatsFromSnapshot(updatedProgressList, user)
 	if err != nil {
 		return nil, err
 	}
@@ -227,14 +266,15 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 	}
 
 	return &ProgressUpdateResponse{
-		Progress:      savedProgress,
-		Rewards:       rewards,
-		TotalXP:       totalXP,
-		Rank:          stats.Rank,
-		PreviousRank:  previousRank,
-		RankUp:        rankUp,
-		CurrentStreak: currentStreak,
-		Stats:         stats,
+		Progress:        savedProgress,
+		Rewards:         rewards,
+		NewAchievements: diffUnlockedAchievements(previousStats, stats),
+		TotalXP:         totalXP,
+		Rank:            stats.Rank,
+		PreviousRank:    previousRank,
+		RankUp:          rankUp,
+		CurrentStreak:   currentStreak,
+		Stats:           stats,
 	}, nil
 }
 
@@ -244,6 +284,15 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 		return nil, err
 	}
 
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.buildStatsFromSnapshot(progressList, user)
+}
+
+func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgress, user *models.User) (*StatsResponse, error) {
 	progressByLessonID := map[uint]models.UserProgress{}
 	for _, p := range progressList {
 		progressByLessonID[p.LessonID] = p
@@ -256,6 +305,8 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 
 	totalLessons := 0
 	completed := 0
+	perfectedLessons := 0
+	completedCourses := 0
 	var courseProgress []CourseProgressItem
 
 	for _, course := range courses {
@@ -283,29 +334,29 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 			}
 			if p.Status == "perfected" {
 				item.Perfected++
+				perfectedLessons++
 				item.EarnedXP += perfectBonusXP
 			}
 		}
 
+		if item.Total > 0 && item.Completed == item.Total {
+			completedCourses++
+		}
 		courseProgress = append(courseProgress, item)
-	}
-
-	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return nil, err
 	}
 
 	derivedXP := deriveXPFromProgressList(progressList)
 	totalXP := 0
 	currentStreak := 0
+	bestStreak := 0
 	rank := "青铜"
 	if user != nil {
-		if user.TotalXP < derivedXP {
-			user.TotalXP = derivedXP
-		}
-		totalXP = user.TotalXP
+		totalXP = maxInt(user.TotalXP, derivedXP)
 		currentStreak = user.CurrentStreak
-		rank = currentRankName(user.TotalXP, user.Rank)
+		bestStreak = maxInt(user.BestStreak, user.CurrentStreak)
+		rank = currentRankName(totalXP, user.Rank)
+	} else {
+		totalXP = derivedXP
 	}
 
 	currentRankMinXP, nextRank, nextRankMinXP, rankProgress, xpToNextRank := rankProgressMeta(totalXP)
@@ -313,16 +364,69 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 	return &StatsResponse{
 		TotalLessons:     totalLessons,
 		Completed:        completed,
+		PerfectedLessons: perfectedLessons,
+		CompletedCourses: completedCourses,
 		TotalXP:          totalXP,
 		Rank:             rank,
 		RankProgress:     rankProgress,
 		CurrentStreak:    currentStreak,
+		BestStreak:       bestStreak,
 		NextRank:         nextRank,
 		CurrentRankMinXP: currentRankMinXP,
 		NextRankMinXP:    nextRankMinXP,
 		XPToNextRank:     xpToNextRank,
 		CourseProgress:   courseProgress,
+		Achievements:     buildAchievements(totalXP, completed, perfectedLessons, completedCourses, bestStreak),
 	}, nil
+}
+
+func buildAchievements(totalXP, completedLessons, perfectedLessons, completedCourses, bestStreak int) []AchievementItem {
+	makeAchievement := func(id, name, description, icon, category string, progress, target int) AchievementItem {
+		current := maxInt(0, progress)
+		if current > target {
+			current = target
+		}
+		return AchievementItem{
+			ID:          id,
+			Name:        name,
+			Description: description,
+			Icon:        icon,
+			Category:    category,
+			Unlocked:    progress >= target,
+			Progress:    current,
+			Target:      target,
+		}
+	}
+
+	return []AchievementItem{
+		makeAchievement("first_lesson", "初出茅庐", "完成第一节课，正式开启中文学习之旅。", "🌱", "学习", completedLessons, 1),
+		makeAchievement("perfect_3", "精准表达", "完成 3 次完美通关，发音与表达都很稳定。", "🎯", "学习", perfectedLessons, 3),
+		makeAchievement("course_1", "整门拿下", "完整学完 1 门课程，建立系统学习节奏。", "📘", "学习", completedCourses, 1),
+		makeAchievement("streak_3", "三日不辍", "连续打卡 3 天，保持学习热度。", "🔥", "打卡", bestStreak, 3),
+		makeAchievement("streak_7", "一周连胜", "连续打卡 7 天，形成稳定习惯。", "🏅", "打卡", bestStreak, 7),
+		makeAchievement("xp_120", "经验达人", "累计获得 120 积分，迈入更成熟的阶段。", "💎", "成长", totalXP, 120),
+	}
+}
+
+func diffUnlockedAchievements(before, after *StatsResponse) []AchievementItem {
+	if after == nil {
+		return nil
+	}
+
+	beforeUnlocked := map[string]bool{}
+	if before != nil {
+		for _, item := range before.Achievements {
+			beforeUnlocked[item.ID] = item.Unlocked
+		}
+	}
+
+	var result []AchievementItem
+	for _, item := range after.Achievements {
+		if item.Unlocked && !beforeUnlocked[item.ID] {
+			result = append(result, item)
+		}
+	}
+	return result
 }
 
 func scoreToStatus(score int) string {

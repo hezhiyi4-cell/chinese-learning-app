@@ -529,6 +529,93 @@
             color: #6170db;
             font-weight: 700;
         }
+        .achievement-wall {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid #eceeff;
+        }
+        .achievement-wall-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .achievement-wall-title {
+            color: #2a3049;
+            font-size: 1em;
+            font-weight: 800;
+        }
+        .achievement-wall-copy {
+            color: #78809a;
+            font-size: 0.88em;
+        }
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .achievement-card {
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid #eceeff;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%);
+            box-shadow: 0 10px 24px rgba(102, 126, 234, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .achievement-card.unlocked {
+            border-color: #ffd88c;
+            background: linear-gradient(180deg, #fffaf0 0%, #fff4d8 100%);
+            box-shadow: 0 12px 28px rgba(255, 191, 61, 0.14);
+        }
+        .achievement-card:hover {
+            transform: translateY(-2px);
+        }
+        .achievement-icon {
+            font-size: 1.5em;
+        }
+        .achievement-name {
+            margin-top: 10px;
+            color: #2b314a;
+            font-size: 0.98em;
+            font-weight: 800;
+        }
+        .achievement-desc {
+            margin-top: 6px;
+            min-height: 42px;
+            color: #717891;
+            font-size: 0.86em;
+            line-height: 1.55;
+        }
+        .achievement-progress {
+            margin-top: 10px;
+            color: #6b7289;
+            font-size: 0.84em;
+            font-weight: 700;
+        }
+        .achievement-card.unlocked .achievement-progress {
+            color: #996300;
+        }
+        .achievement-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 32px;
+            transform: translateX(-50%);
+            min-width: min(420px, calc(100vw - 32px));
+            max-width: calc(100vw - 32px);
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255, 237, 191, 0.98) 0%, rgba(255, 212, 119, 0.98) 100%);
+            color: #6c4600;
+            font-weight: 800;
+            box-shadow: 0 18px 46px rgba(122, 88, 0, 0.22);
+            animation: achievementToastIn 2200ms ease forwards;
+            z-index: 10002;
+            text-align: center;
+        }
         .header-actions {
             display: flex;
             gap: 10px;
@@ -889,6 +976,12 @@
             45% { transform: scale(1.03); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
+        @keyframes achievementToastIn {
+            0% { transform: translate(-50%, 18px); opacity: 0; }
+            14% { transform: translate(-50%, 0); opacity: 1; }
+            84% { transform: translate(-50%, 0); opacity: 1; }
+            100% { transform: translate(-50%, -10px); opacity: 0; }
+        }
         @media (max-width: 900px) {
             .admin-layout {
                 grid-template-columns: 1fr;
@@ -958,6 +1051,9 @@
             .user-stats-grid {
                 grid-template-columns: 1fr;
             }
+            .achievement-grid {
+                grid-template-columns: 1fr;
+            }
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 14px;
@@ -974,7 +1070,8 @@
             }
             .rank-progress-top,
             .rank-progress-bottom,
-            .user-center-head {
+            .user-center-head,
+            .achievement-wall-head {
                 align-items: flex-start;
             }
             .course-detail-cover {
@@ -1181,7 +1278,7 @@
                         <div class="user-stat-card">
                             <div class="user-stat-label">连续打卡</div>
                             <div id="user-streak-days" class="user-stat-value">0</div>
-                            <div class="user-stat-desc">连续学习可额外获得 +5 积分</div>
+                            <div id="user-streak-copy" class="user-stat-desc">连续学习可额外获得 +5 积分</div>
                         </div>
                     </div>
                     <div class="rank-progress-panel">
@@ -1196,6 +1293,13 @@
                             <span id="user-rank-progress-min">0 积分</span>
                             <span id="user-rank-progress-max">60 积分</span>
                         </div>
+                    </div>
+                    <div class="achievement-wall">
+                        <div class="achievement-wall-head">
+                            <div class="achievement-wall-title">勋章墙</div>
+                            <div id="achievement-wall-copy" class="achievement-wall-copy">完成学习目标即可解锁新勋章</div>
+                        </div>
+                        <div id="achievement-grid" class="achievement-grid"></div>
                     </div>
                 </div>
                 <h2>选择课程</h2>
@@ -1589,6 +1693,7 @@
                 user.rank = stats.rank;
                 user.totalXp = stats.totalXP ?? stats.totalXp ?? 0;
                 user.currentStreak = stats.currentStreak ?? 0;
+                user.bestStreak = stats.bestStreak ?? 0;
                 localStorage.setItem("user", JSON.stringify(user));
             }
 
@@ -1608,10 +1713,12 @@
             const rank = userStats.rank || "青铜";
             const nextRank = userStats.nextRank || rank;
             const streakDays = userStats.currentStreak ?? 0;
+            const bestStreak = userStats.bestStreak ?? 0;
             const progress = userStats.rankProgress ?? 0;
             const minXp = userStats.currentRankMinXp ?? 0;
             const maxXp = userStats.nextRankMinXp ?? minXp;
             const xpToNext = userStats.xpToNextRank ?? 0;
+            const unlockedCount = (userStats.achievements || []).filter((item) => item?.unlocked).length;
 
             document.getElementById("user-rank-pill").textContent = `${rank} 段位`;
             document.getElementById("user-total-xp").textContent = totalXp;
@@ -1619,10 +1726,35 @@
             document.getElementById("user-rank-name").textContent = rank;
             document.getElementById("user-next-rank-copy").textContent = xpToNext > 0 ? `下一段位：${nextRank}` : "已达到最高段位";
             document.getElementById("user-streak-days").textContent = streakDays;
+            document.getElementById("user-streak-copy").textContent = `最佳纪录 ${bestStreak} 天，连续学习可额外获得 +5 积分`;
             document.getElementById("user-rank-progress-fill").style.width = `${Math.max(0, Math.min(100, progress))}%`;
             document.getElementById("user-rank-progress-min").textContent = `${minXp} 积分`;
             document.getElementById("user-rank-progress-max").textContent = xpToNext > 0 ? `${maxXp} 积分` : "满级";
             document.getElementById("user-rank-progress-copy").textContent = xpToNext > 0 ? `距离 ${nextRank} 还差 ${xpToNext} 积分` : "你已达到当前最高段位";
+            document.getElementById("achievement-wall-copy").textContent = `已解锁 ${unlockedCount} / ${(userStats.achievements || []).length} 枚勋章`;
+            renderAchievementWall(userStats.achievements || []);
+        }
+
+        function renderAchievementWall(achievements) {
+            const grid = document.getElementById("achievement-grid");
+            if (!grid) return;
+            if (!Array.isArray(achievements) || achievements.length === 0) {
+                grid.innerHTML = `<div class="achievement-card"><div class="achievement-name">勋章准备中</div><div class="achievement-desc">继续学习后，这里会展示你的成就收藏。</div></div>`;
+                return;
+            }
+
+            grid.innerHTML = achievements.map((item) => {
+                const unlocked = Boolean(item?.unlocked);
+                const progressText = unlocked ? "已解锁" : `${item?.progress ?? 0} / ${item?.target ?? 0}`;
+                return `
+                    <div class="achievement-card ${unlocked ? "unlocked" : ""}">
+                        <div class="achievement-icon">${escapeHtml(item?.icon || "🏅")}</div>
+                        <div class="achievement-name">${escapeHtml(item?.name || "成就")}</div>
+                        <div class="achievement-desc">${escapeHtml(item?.description || "")}</div>
+                        <div class="achievement-progress">${escapeHtml(item?.category || "成长")} · ${escapeHtml(progressText)}</div>
+                    </div>
+                `;
+            }).join("");
         }
 
         function clearCourseCoverPreviewObjectUrl() {
@@ -2219,6 +2351,7 @@
                 }
                 showCelebration(msg);
                 showRewardFloats(data.rewards || []);
+                showAchievementUnlocks(data.newAchievements || []);
                 if (data.rankUp) {
                     showRankPromotion(data.previousRank || "青铜", data.rank || userStats?.rank || "白银");
                 }
@@ -2886,6 +3019,21 @@
             setTimeout(() => {
                 overlay.classList.add("hidden");
             }, 2200);
+        }
+
+        function showAchievementUnlocks(items) {
+            if (!Array.isArray(items) || items.length === 0) return;
+
+            items.forEach((item, index) => {
+                const toast = document.createElement("div");
+                toast.className = "achievement-toast";
+                toast.style.bottom = `${32 + index * 74}px`;
+                toast.textContent = `${item?.icon || "🏅"} 解锁成就：${item?.name || "新勋章"}`;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.remove();
+                }, 2300);
+            });
         }
 
         async function sendToAI() {

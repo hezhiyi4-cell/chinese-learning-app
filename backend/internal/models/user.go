@@ -13,6 +13,7 @@ type User struct {
 	TotalXP       int        `gorm:"default:0" json:"totalXp"`
 	Rank          string     `gorm:"default:'青铜'" json:"rank"`
 	CurrentStreak int        `gorm:"default:0" json:"currentStreak"`
+	BestStreak    int        `gorm:"default:0" json:"bestStreak"`
 	LastCheckInAt *time.Time `json:"lastCheckInAt"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	UpdatedAt     time.Time  `json:"updatedAt"`
