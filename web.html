@@ -16,6 +16,9 @@
             min-height: 100vh;
             padding: 20px;
         }
+        body.modal-open {
+            overflow: hidden;
+        }
         .container {
             max-width: 1120px;
             margin: 0 auto;
@@ -615,6 +618,79 @@
             animation: achievementToastIn 2200ms ease forwards;
             z-index: 10002;
             text-align: center;
+        }
+        .app-notice-root {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(560px, calc(100vw - 28px));
+            z-index: 10020;
+            pointer-events: none;
+        }
+        .app-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            box-shadow: 0 18px 46px rgba(23, 28, 68, 0.18);
+            backdrop-filter: blur(10px);
+            animation: appNoticeIn 220ms ease;
+        }
+        .app-notice-icon {
+            flex: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+            font-weight: 800;
+        }
+        .app-notice-body {
+            min-width: 0;
+            flex: 1;
+        }
+        .app-notice-title {
+            color: #23304b;
+            font-size: 0.96em;
+            font-weight: 900;
+        }
+        .app-notice-copy {
+            margin-top: 4px;
+            color: #53607d;
+            font-size: 0.9em;
+            line-height: 1.55;
+        }
+        .app-notice-success {
+            background: rgba(242, 255, 247, 0.98);
+            border-color: #cbf0d6;
+        }
+        .app-notice-success .app-notice-icon {
+            background: #dff7e7;
+            color: #1d8b43;
+        }
+        .app-notice-error {
+            background: rgba(255, 245, 245, 0.98);
+            border-color: #f4d0d0;
+        }
+        .app-notice-error .app-notice-icon {
+            background: #ffe3e3;
+            color: #c0392b;
+        }
+        .app-notice-info {
+            background: rgba(244, 247, 255, 0.98);
+            border-color: #dce4ff;
+        }
+        .app-notice-info .app-notice-icon {
+            background: #e6edff;
+            color: #4660db;
+        }
+        .payment-flash {
+            animation: paymentFlash 1800ms ease;
         }
         .leaderboard-panel {
             margin-top: 16px;
@@ -1333,6 +1409,30 @@
             84% { transform: translate(-50%, 0); opacity: 1; }
             100% { transform: translate(-50%, -10px); opacity: 0; }
         }
+        @keyframes appNoticeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes paymentFlash {
+            0% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+                transform: translateY(0);
+            }
+            20% {
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.12);
+                transform: translateY(-1px);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+                transform: translateY(0);
+            }
+        }
         @media (max-width: 900px) {
             .admin-layout {
                 grid-template-columns: 1fr;
@@ -1977,6 +2077,8 @@
         </div>
     </div>
 
+    <div id="app-notice-root" class="app-notice-root" aria-live="polite" aria-atomic="true"></div>
+
     <script src="./config.js?v=20260710-1"></script>
     <script>
         const API_BASE = "https://chinese-learning-api-wsud.onrender.com/api/v1";
@@ -2013,6 +2115,7 @@
         let adminCourseCoverFile = null;
         let courseCoverPreviewObjectUrl = "";
         let activePolicyType = "privacy";
+        let appNoticeTimer = null;
 
         window.onload = function() {
             if (token && user) {
@@ -2440,7 +2543,7 @@
             const plan = (paymentCatalog?.plans || []).find((item) => item.code === planCode) || getSelectedPaymentPlan();
             const price = getSelectedPlanPrice(plan);
             if (!plan || !price) {
-                alert("请选择可用的支付套餐和币种");
+                showAppNotice("请选择可用的支付套餐和币种后再发起支付。", "error");
                 return;
             }
 
@@ -2456,17 +2559,21 @@
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    alert(data.error || "创建支付订单失败");
+                    showAppNotice(data.error || "创建支付订单失败，请稍后重试。", "error");
                     return;
                 }
                 const checkout = data.checkout || {};
                 await loadPaymentCatalog(true);
-                alert(checkout.message || "支付订单已创建");
+                showAppNotice(
+                    checkout.message || "支付订单已创建。",
+                    checkout.approvalUrl ? "info" : "success",
+                    checkout.approvalUrl ? "正在为你打开 PayPal 支付页。" : "演示模式下可直接在最近订单中点击“确认支付”。"
+                );
                 if (checkout.approvalUrl) {
                     window.open(checkout.approvalUrl, "_blank");
                 }
             } catch (e) {
-                alert(`支付网络错误：${e?.message || e}`);
+                showAppNotice(`支付网络错误：${e?.message || e}`, "error");
             }
         }
 
@@ -2478,13 +2585,16 @@
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    alert(data.error || "确认支付失败");
+                    showAppNotice(data.error || "确认支付失败，请稍后重试。", "error");
                     return;
                 }
                 await loadPaymentCatalog(true);
-                alert(data.checkout?.message || "支付状态已更新");
+                const order = data.checkout?.order || {};
+                const planName = order.planName || order.planCode || "当前套餐";
+                showAppNotice(`${planName} 已支付成功`, "success", "订单状态和订阅权益都已自动刷新。");
+                emphasizePaymentState();
             } catch (e) {
-                alert(`确认支付失败：${e?.message || e}`);
+                showAppNotice(`确认支付失败：${e?.message || e}`, "error");
             }
         }
 
@@ -2653,18 +2763,79 @@
             copyEl.textContent = doc.copy || "";
             bodyEl.innerHTML = renderPolicySections(doc.sections);
             modal.classList.remove("hidden");
+            setBodyScrollLock(true);
         }
 
         function closePolicyModal() {
             const modal = document.getElementById("policy-modal");
             if (!modal) return;
             modal.classList.add("hidden");
+            setBodyScrollLock(false);
         }
 
         function handlePolicyOverlayClick(event) {
             if (event.target?.id === "policy-modal") {
                 closePolicyModal();
             }
+        }
+
+        function setBodyScrollLock(locked) {
+            document.body.classList.toggle("modal-open", Boolean(locked));
+        }
+
+        function isPolicyModalOpen() {
+            const modal = document.getElementById("policy-modal");
+            return Boolean(modal && !modal.classList.contains("hidden"));
+        }
+
+        function showAppNotice(message, type = "info", detail = "") {
+            const root = document.getElementById("app-notice-root");
+            if (!root || !message) return;
+
+            const safeType = ["success", "error", "info"].includes(type) ? type : "info";
+            const titleMap = {
+                success: "操作成功",
+                error: "请留意",
+                info: "提示",
+            };
+            const iconMap = {
+                success: "✓",
+                error: "!",
+                info: "i",
+            };
+
+            root.innerHTML = `
+                <div class="app-notice app-notice-${safeType}">
+                    <div class="app-notice-icon">${iconMap[safeType]}</div>
+                    <div class="app-notice-body">
+                        <div class="app-notice-title">${titleMap[safeType]}</div>
+                        <div class="app-notice-copy">${escapeHtml(message)}</div>
+                        ${detail ? `<div class="app-notice-copy">${escapeHtml(detail)}</div>` : ""}
+                    </div>
+                </div>
+            `;
+
+            if (appNoticeTimer) {
+                clearTimeout(appNoticeTimer);
+            }
+            appNoticeTimer = setTimeout(() => {
+                root.innerHTML = "";
+                appNoticeTimer = null;
+            }, safeType === "success" ? 3200 : 4200);
+        }
+
+        function emphasizePaymentState() {
+            const targets = [
+                document.getElementById("payment-subscription-slot"),
+                document.getElementById("payment-order-list"),
+            ].filter(Boolean);
+            targets.forEach((el) => {
+                el.classList.remove("payment-flash");
+                void el.offsetWidth;
+                el.classList.add("payment-flash");
+            });
+            const paymentPanel = document.querySelector(".payment-panel");
+            paymentPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         async function handlePaymentRedirectIfAny() {
@@ -2675,7 +2846,7 @@
 
             if (payment === "cancel") {
                 clearPaymentQueryParams();
-                alert("已取消支付，如需继续可重新下单。");
+                showAppNotice("已取消支付，如需继续可重新下单。", "info");
                 return;
             }
 
@@ -2685,7 +2856,7 @@
 
             if (!orderId || Number.isNaN(orderId)) {
                 clearPaymentQueryParams();
-                alert("支付回跳成功，但缺少订单信息，请在支付中心查看最近订单并点击“确认支付”。");
+                showAppNotice("支付回跳成功，但缺少订单信息，请在支付中心查看最近订单并点击“确认支付”。", "info");
                 return;
             }
 
@@ -2915,7 +3086,7 @@
                 const data = await res.json();
 
                 if (res.ok || res.status === 201) {
-                    alert("注册成功！请登录！");
+                    showAppNotice("注册成功，请登录后开始学习。", "success");
                     showLogin();
                 } else {
                     alert(data.message || data.error || "注册失败，请重试");
@@ -2942,7 +3113,7 @@
                     user = data.user;
                     localStorage.setItem("token", token);
                     localStorage.setItem("user", JSON.stringify(user));
-                    alert("登录成功！");
+                    showAppNotice(`欢迎回来，${user?.nickname || user?.email || "学习者"}`, "success", "已为你同步课程、排行榜和支付中心数据。");
                     showHome();
                     const pendingOrderId = localStorage.getItem("pending_payment_order_id");
                     if (pendingOrderId) {
@@ -2953,10 +3124,10 @@
                         }
                     }
                 } else {
-                    alert(data.message || data.error || "登录失败，请检查账号密码");
+                    showAppNotice(data.message || data.error || "登录失败，请检查账号密码。", "error", "请确认邮箱和密码是否输入正确。");
                 }
             } catch (e) {
-                alert(`网络错误：${e?.message || e}\nAPI_BASE: ${API_BASE}`);
+                showAppNotice(`网络错误：${e?.message || e}`, "error", `API_BASE: ${API_BASE}`);
             }
         }
 
@@ -3945,6 +4116,12 @@
             closeLessonModal();
             closePolicyModal();
         }
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && isPolicyModalOpen()) {
+                closePolicyModal();
+            }
+        });
 
         function showCelebration(message) {
             const overlay = document.getElementById("celebration-overlay");
