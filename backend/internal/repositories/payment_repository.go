@@ -65,6 +65,6 @@ func (r *PaymentRepository) ReplaceUserSubscription(userID uint, sub *models.Pay
 			Updates(map[string]any{"status": "replaced"}).Error; err != nil {
 			return err
 		}
-		return tx.Create(sub).Error
+		return tx.Select("*").Create(sub).Error
 	})
 }

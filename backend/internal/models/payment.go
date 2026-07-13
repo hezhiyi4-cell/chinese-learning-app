@@ -33,7 +33,7 @@ type PaymentSubscription struct {
 	Status                 string     `gorm:"size:30;default:'pending';index" json:"status"`
 	BillingCycle           string     `gorm:"size:30;not null" json:"billingCycle"`
 	ExternalSubscriptionID string     `gorm:"size:120;index" json:"externalSubscriptionId"`
-	AutoRenew              bool       `gorm:"default:true" json:"autoRenew"`
+	AutoRenew              bool       `json:"autoRenew"`
 	CurrentPeriodStart     *time.Time `json:"currentPeriodStart"`
 	CurrentPeriodEnd       *time.Time `json:"currentPeriodEnd"`
 	CreatedAt              time.Time  `json:"createdAt"`

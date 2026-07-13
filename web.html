@@ -2503,12 +2503,15 @@
 
             const sub = paymentCatalog.latestSubscription;
             if (sub) {
+                const subscriptionPeriodText = sub.billingCycle === "one_time"
+                    ? "长期有效"
+                    : `${escapeHtml(formatDateTime(sub.currentPeriodStart))} - ${escapeHtml(formatDateTime(sub.currentPeriodEnd))}`;
                 subscriptionSlot.innerHTML = `
                     <div class="payment-order-item">
                         <div>
                             <div class="payment-order-title">${escapeHtml(sub.planName)} · ${escapeHtml(sub.status)}</div>
-                            <div class="payment-order-meta">通道：${escapeHtml(sub.gateway)} · 币种：${escapeHtml(sub.currency)} ${escapeHtml(sub.amount)} · 周期：${escapeHtml(sub.billingCycle)}</div>
-                            <div class="payment-order-meta">有效期：${escapeHtml(formatDateTime(sub.currentPeriodStart))} - ${escapeHtml(formatDateTime(sub.currentPeriodEnd))}</div>
+                            <div class="payment-order-meta">通道：${escapeHtml(sub.gateway)} · 币种：${escapeHtml(sub.currency)} ${escapeHtml(sub.amount)} · 周期：${escapeHtml(sub.billingCycle)}${sub.autoRenew ? " · 自动续费" : " · 不自动续费"}</div>
+                            <div class="payment-order-meta">有效期：${subscriptionPeriodText}</div>
                         </div>
                     </div>
                 `;
@@ -2589,10 +2592,24 @@
                     return;
                 }
                 await loadPaymentCatalog(true);
-                const order = data.checkout?.order || {};
+                const checkout = data.checkout || {};
+                const order = checkout.order || {};
                 const planName = order.planName || order.planCode || "当前套餐";
-                showAppNotice(`${planName} 已支付成功`, "success", "订单状态和订阅权益都已自动刷新。");
-                emphasizePaymentState();
+                const status = String(order.status || "").toLowerCase();
+                if (status === "paid") {
+                    showAppNotice(`${planName} 已支付成功`, "success", "订单状态和订阅权益都已自动刷新。");
+                    emphasizePaymentState();
+                    return;
+                }
+                if (status === "failed") {
+                    showAppNotice(`${planName} 支付失败`, "error", checkout.message || "请稍后重试，或重新发起一个新的支付订单。");
+                    return;
+                }
+                showAppNotice(
+                    `${planName} 仍在等待支付确认`,
+                    "info",
+                    checkout.message || "如果你刚完成 PayPal 页面操作，请稍后再次点击“确认支付”。"
+                );
             } catch (e) {
                 showAppNotice(`确认支付失败：${e?.message || e}`, "error");
             }
@@ -2863,6 +2880,7 @@
             if (!token) {
                 localStorage.setItem("pending_payment_order_id", String(orderId));
                 clearPaymentQueryParams();
+                showAppNotice("支付已返回，请先登录继续确认订单。", "info", "登录后我会自动继续确认这笔支付。");
                 showLogin();
                 return;
             }

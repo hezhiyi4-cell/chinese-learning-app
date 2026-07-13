@@ -194,6 +194,7 @@ func (s *PaymentService) ConfirmCheckout(userID, orderID uint) (*CheckoutRespons
 		now := time.Now()
 		order.Status = "paid"
 		order.PaidAt = &now
+		autoRenew := order.ProductType == "subscription"
 		subscription := &models.PaymentSubscription{
 			UserID:                 userID,
 			PlanCode:               order.PlanCode,
@@ -204,9 +205,9 @@ func (s *PaymentService) ConfirmCheckout(userID, orderID uint) (*CheckoutRespons
 			Status:                 "active",
 			BillingCycle:           order.BillingCycle,
 			ExternalSubscriptionID: order.ExternalOrderID,
-			AutoRenew:              true,
+			AutoRenew:              autoRenew,
 			CurrentPeriodStart:     &now,
-			CurrentPeriodEnd:       ptrTime(nextBillingTime(now, order.BillingCycle)),
+			CurrentPeriodEnd:       subscriptionPeriodEnd(now, order.BillingCycle),
 		}
 		if err := s.paymentRepo.ReplaceUserSubscription(userID, subscription); err != nil {
 			return nil, err
@@ -373,6 +374,13 @@ func nextBillingTime(start time.Time, cycle string) time.Time {
 	default:
 		return start.AddDate(100, 0, 0)
 	}
+}
+
+func subscriptionPeriodEnd(start time.Time, cycle string) *time.Time {
+	if cycle == "one_time" {
+		return nil
+	}
+	return ptrTime(nextBillingTime(start, cycle))
 }
 
 func ternaryString(condition bool, whenTrue, whenFalse string) string {
