@@ -38,22 +38,46 @@ type AchievementItem struct {
 	Target      int    `json:"target"`
 }
 
+type ContinueLearningItem struct {
+	CourseID     uint   `json:"courseId"`
+	CourseTitle  string `json:"courseTitle"`
+	LessonID     uint   `json:"lessonId"`
+	LessonTitle  string `json:"lessonTitle"`
+	LessonOrder  int    `json:"lessonOrder"`
+	Level        string `json:"level"`
+	LevelName    string `json:"levelName"`
+	Completed    int    `json:"completed"`
+	TotalLessons int    `json:"totalLessons"`
+}
+
+type RecommendedCourseItem struct {
+	CourseID         uint   `json:"courseId"`
+	CourseTitle      string `json:"courseTitle"`
+	Level            string `json:"level"`
+	LevelName        string `json:"levelName"`
+	FirstLessonID    uint   `json:"firstLessonId"`
+	FirstLessonTitle string `json:"firstLessonTitle"`
+	Reason           string `json:"reason"`
+}
+
 type StatsResponse struct {
-	TotalLessons     int                  `json:"totalLessons"`
-	Completed        int                  `json:"completed"`
-	PerfectedLessons int                  `json:"perfectedLessons"`
-	CompletedCourses int                  `json:"completedCourses"`
-	TotalXP          int                  `json:"totalXP"`
-	Rank             string               `json:"rank"`
-	RankProgress     int                  `json:"rankProgress"`
-	CurrentStreak    int                  `json:"currentStreak"`
-	BestStreak       int                  `json:"bestStreak"`
-	NextRank         string               `json:"nextRank"`
-	CurrentRankMinXP int                  `json:"currentRankMinXp"`
-	NextRankMinXP    int                  `json:"nextRankMinXp"`
-	XPToNextRank     int                  `json:"xpToNextRank"`
-	CourseProgress   []CourseProgressItem `json:"courseProgress"`
-	Achievements     []AchievementItem    `json:"achievements"`
+	TotalLessons      int                    `json:"totalLessons"`
+	Completed         int                    `json:"completed"`
+	PerfectedLessons  int                    `json:"perfectedLessons"`
+	CompletedCourses  int                    `json:"completedCourses"`
+	TotalXP           int                    `json:"totalXP"`
+	Rank              string                 `json:"rank"`
+	RankProgress      int                    `json:"rankProgress"`
+	CurrentStreak     int                    `json:"currentStreak"`
+	BestStreak        int                    `json:"bestStreak"`
+	NextRank          string                 `json:"nextRank"`
+	CurrentRankMinXP  int                    `json:"currentRankMinXp"`
+	NextRankMinXP     int                    `json:"nextRankMinXp"`
+	XPToNextRank      int                    `json:"xpToNextRank"`
+	CourseProgress    []CourseProgressItem   `json:"courseProgress"`
+	ContinueLearning  *ContinueLearningItem  `json:"continueLearning"`
+	RecommendedCourse *RecommendedCourseItem `json:"recommendedCourse"`
+	Achievements      []AchievementItem      `json:"achievements"`
 }
 
 type LeaderboardEntry struct {
@@ -83,6 +107,14 @@ type CourseProgressItem struct {
 	Total     int  `json:"total"`
 	EarnedXP  int  `json:"earnedXp"`
 	TotalXP   int  `json:"totalXp"`
+}
+
+type courseSnapshot struct {
+	course               models.Course
+	lessons              []models.Lesson
+	completed            int
+	total                int
+	firstIncompleteIndex int
 }
 
 type ProgressUpdateResponse struct {
@@ -392,6 +424,7 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 	perfectedLessons := 0
 	completedCourses := 0
 	var courseProgress []CourseProgressItem
+	snapshots := make([]courseSnapshot, 0, len(courses))
 
 	for _, course := range courses {
 		lessons, err := s.courseRepo.GetLessons(course.ID)
@@ -404,10 +437,24 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 			Total:    len(lessons),
 			TotalXP:  len(lessons) * (lessonCompleteXP + perfectBonusXP),
 		}
+		snapshot := courseSnapshot{
+			course:               course,
+			lessons:              lessons,
+			total:                len(lessons),
+			firstIncompleteIndex: -1,
+		}
 		totalLessons += len(lessons)
 
-		for _, lesson := range lessons {
+		for index, lesson := range lessons {
 			p, ok := progressByLessonID[lesson.ID]
+			if !ok || !isCompletedStatus(p.Status) {
+				if snapshot.firstIncompleteIndex == -1 {
+					snapshot.firstIncompleteIndex = index
+				}
+				if !ok {
+					continue
+				}
+			}
 			if !ok {
 				continue
 			}
@@ -415,6 +462,7 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 				item.Completed++
 				completed++
 				item.EarnedXP += lessonCompleteXP
+				snapshot.completed++
 			}
 			if p.Status == "perfected" {
 				item.Perfected++
@@ -427,6 +475,7 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 			completedCourses++
 		}
 		courseProgress = append(courseProgress, item)
+		snapshots = append(snapshots, snapshot)
 	}
 
 	derivedXP := deriveXPFromProgressList(progressList)
@@ -444,23 +493,27 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 	}
 
 	currentRankMinXP, nextRank, nextRankMinXP, rankProgress, xpToNextRank := rankProgressMeta(totalXP)
+	continueLearning := deriveContinueLearning(snapshots)
+	recommendedCourse := deriveRecommendedCourse(snapshots)
 
 	return &StatsResponse{
-		TotalLessons:     totalLessons,
-		Completed:        completed,
-		PerfectedLessons: perfectedLessons,
-		CompletedCourses: completedCourses,
-		TotalXP:          totalXP,
-		Rank:             rank,
-		RankProgress:     rankProgress,
-		CurrentStreak:    currentStreak,
-		BestStreak:       bestStreak,
-		NextRank:         nextRank,
-		CurrentRankMinXP: currentRankMinXP,
-		NextRankMinXP:    nextRankMinXP,
-		XPToNextRank:     xpToNextRank,
-		CourseProgress:   courseProgress,
-		Achievements:     buildAchievements(totalXP, completed, perfectedLessons, completedCourses, bestStreak),
+		TotalLessons:      totalLessons,
+		Completed:         completed,
+		PerfectedLessons:  perfectedLessons,
+		CompletedCourses:  completedCourses,
+		TotalXP:           totalXP,
+		Rank:              rank,
+		RankProgress:      rankProgress,
+		CurrentStreak:     currentStreak,
+		BestStreak:        bestStreak,
+		NextRank:          nextRank,
+		CurrentRankMinXP:  currentRankMinXP,
+		NextRankMinXP:     nextRankMinXP,
+		XPToNextRank:      xpToNextRank,
+		CourseProgress:    courseProgress,
+		ContinueLearning:  continueLearning,
+		RecommendedCourse: recommendedCourse,
+		Achievements:      buildAchievements(totalXP, completed, perfectedLessons, completedCourses, bestStreak),
 	}, nil
 }
 
@@ -681,4 +734,131 @@ func selectNearbyEntries(entries []LeaderboardEntry, userID uint, window int) []
 		start = maxInt(0, end-window)
 	}
 	return entries[start:end]
+}
+
+func deriveContinueLearning(snapshots []courseSnapshot) *ContinueLearningItem {
+	for _, snapshot := range snapshots {
+		if snapshot.total == 0 || snapshot.completed == 0 || snapshot.completed >= snapshot.total || snapshot.firstIncompleteIndex < 0 {
+			continue
+		}
+		return buildContinueLearningItem(snapshot, snapshot.firstIncompleteIndex)
+	}
+
+	for _, snapshot := range snapshots {
+		if snapshot.total == 0 || snapshot.completed >= snapshot.total {
+			continue
+		}
+		targetIndex := snapshot.firstIncompleteIndex
+		if targetIndex < 0 {
+			targetIndex = 0
+		}
+		return buildContinueLearningItem(snapshot, targetIndex)
+	}
+
+	return nil
+}
+
+func buildContinueLearningItem(snapshot courseSnapshot, lessonIndex int) *ContinueLearningItem {
+	if lessonIndex < 0 || lessonIndex >= len(snapshot.lessons) {
+		return nil
+	}
+	lesson := snapshot.lessons[lessonIndex]
+	return &ContinueLearningItem{
+		CourseID:     snapshot.course.ID,
+		CourseTitle:  snapshot.course.Title,
+		LessonID:     lesson.ID,
+		LessonTitle:  lesson.Title,
+		LessonOrder:  lessonIndex + 1,
+		Level:        snapshot.course.Level,
+		LevelName:    snapshot.course.LevelName,
+		Completed:    snapshot.completed,
+		TotalLessons: snapshot.total,
+	}
+}
+
+func deriveRecommendedCourse(snapshots []courseSnapshot) *RecommendedCourseItem {
+	type levelSummary struct {
+		label            string
+		totalCourses     int
+		completedCourses int
+		firstIncomplete  *RecommendedCourseItem
+	}
+
+	orderedLevels := make([]string, 0, len(snapshots))
+	levelSummaries := map[string]*levelSummary{}
+
+	for _, snapshot := range snapshots {
+		if snapshot.total == 0 {
+			continue
+		}
+
+		levelKey := snapshot.course.Level
+		summary, ok := levelSummaries[levelKey]
+		if !ok {
+			summary = &levelSummary{label: displayCourseLevel(snapshot.course)}
+			levelSummaries[levelKey] = summary
+			orderedLevels = append(orderedLevels, levelKey)
+		}
+
+		summary.totalCourses++
+		if snapshot.completed == snapshot.total {
+			summary.completedCourses++
+		} else if summary.firstIncomplete == nil {
+			summary.firstIncomplete = buildRecommendedCourseItem(snapshot)
+		}
+	}
+
+	for index, levelKey := range orderedLevels {
+		summary := levelSummaries[levelKey]
+		if summary == nil || summary.totalCourses == 0 || summary.completedCourses != summary.totalCourses {
+			continue
+		}
+		for nextIndex := index + 1; nextIndex < len(orderedLevels); nextIndex++ {
+			nextSummary := levelSummaries[orderedLevels[nextIndex]]
+			if nextSummary == nil || nextSummary.firstIncomplete == nil {
+				continue
+			}
+			item := *nextSummary.firstIncomplete
+			item.Reason = summary.label + " 已完成，推荐进入 " + nextSummary.label
+			return &item
+		}
+	}
+
+	for _, snapshot := range snapshots {
+		if snapshot.total == 0 || snapshot.completed == snapshot.total {
+			continue
+		}
+		item := buildRecommendedCourseItem(snapshot)
+		if item != nil {
+			item.Reason = "推荐继续当前学习路径，按顺序学效果更好。"
+		}
+		return item
+	}
+
+	return nil
+}
+
+func buildRecommendedCourseItem(snapshot courseSnapshot) *RecommendedCourseItem {
+	if len(snapshot.lessons) == 0 {
+		return nil
+	}
+	firstLesson := snapshot.lessons[0]
+	return &RecommendedCourseItem{
+		CourseID:         snapshot.course.ID,
+		CourseTitle:      snapshot.course.Title,
+		Level:            snapshot.course.Level,
+		LevelName:        snapshot.course.LevelName,
+		FirstLessonID:    firstLesson.ID,
+		FirstLessonTitle: firstLesson.Title,
+	}
+}
+
+func displayCourseLevel(course models.Course) string {
+	if course.LevelName != "" {
+		return course.LevelName
+	}
+	if course.Level != "" {
+		return course.Level
+	}
+	return "当前阶段"
 }

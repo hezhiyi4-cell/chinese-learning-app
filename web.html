@@ -448,6 +448,67 @@
             background: linear-gradient(135deg, #f7f8ff 0%, #fff7f2 100%);
             border: 1px solid #eceeff;
         }
+        .learning-focus-panel {
+            margin: 0 0 24px;
+            padding: 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.16);
+            box-shadow: 0 14px 30px rgba(102, 126, 234, 0.08);
+        }
+        .learning-focus-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .learning-focus-title {
+            color: #27304a;
+            font-size: 1.05em;
+            font-weight: 800;
+        }
+        .learning-focus-copy {
+            color: #6d7490;
+            font-size: 0.9em;
+        }
+        .learning-focus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+        .learning-focus-card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(102, 126, 234, 0.12);
+            box-shadow: 0 10px 22px rgba(35, 41, 70, 0.06);
+        }
+        .learning-focus-label {
+            color: #66708b;
+            font-size: 0.82em;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .learning-focus-main {
+            margin-top: 8px;
+            color: #232946;
+            font-size: 1.08em;
+            font-weight: 800;
+        }
+        .learning-focus-sub {
+            margin-top: 8px;
+            color: #6d7490;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .learning-focus-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .user-center-head {
             display: flex;
             justify-content: space-between;
@@ -1806,6 +1867,18 @@
                         <div id="payment-order-list" class="payment-order-list"></div>
                     </div>
                 </div>
+                <div id="learning-focus-panel" class="learning-focus-panel hidden">
+                    <div class="learning-focus-head">
+                        <div>
+                            <div class="learning-focus-title">学习导航</div>
+                            <div id="learning-focus-copy" class="learning-focus-copy">根据你的当前进度，继续最合适的下一步。</div>
+                        </div>
+                    </div>
+                    <div class="learning-focus-grid">
+                        <div id="continue-learning-card" class="learning-focus-card"></div>
+                        <div id="recommended-course-card" class="learning-focus-card"></div>
+                    </div>
+                </div>
                 <h2>选择课程</h2>
                 <div id="course-list" class="course-grid"></div>
             </div>
@@ -2229,6 +2302,7 @@
             }
 
             renderUserCenter();
+            renderLearningFocus();
         }
 
         function renderUserCenter() {
@@ -2264,6 +2338,60 @@
             document.getElementById("user-rank-progress-copy").textContent = xpToNext > 0 ? `距离 ${nextRank} 还差 ${xpToNext} 积分` : "你已达到当前最高段位";
             document.getElementById("achievement-wall-copy").textContent = `已解锁 ${unlockedCount} / ${(userStats.achievements || []).length} 枚勋章`;
             renderAchievementWall(userStats.achievements || []);
+        }
+
+        function renderLearningFocus() {
+            const panel = document.getElementById("learning-focus-panel");
+            const continueCard = document.getElementById("continue-learning-card");
+            const recommendedCard = document.getElementById("recommended-course-card");
+            const copyEl = document.getElementById("learning-focus-copy");
+            if (!panel || !continueCard || !recommendedCard || !copyEl) return;
+
+            if (!token || !userStats) {
+                panel.classList.add("hidden");
+                return;
+            }
+
+            panel.classList.remove("hidden");
+            const continueItem = userStats.continueLearning || null;
+            const recommendedItem = userStats.recommendedCourse || null;
+            copyEl.textContent = continueItem
+                ? `继续学习：第 ${continueItem.lessonOrder} 课`
+                : "完成一节课后，这里会自动记住你的下一步。";
+
+            if (continueItem) {
+                continueCard.innerHTML = `
+                    <div class="learning-focus-label">继续学习入口</div>
+                    <div class="learning-focus-main">继续学习：第 ${continueItem.lessonOrder} 课</div>
+                    <div class="learning-focus-sub">课程：${escapeHtml(continueItem.courseTitle || "当前课程")}<br>课时：${escapeHtml(continueItem.lessonTitle || "下一课")}<br>已完成 ${continueItem.completed} / ${continueItem.totalLessons} 课时</div>
+                    <div class="learning-focus-actions">
+                        <button class="btn btn-primary btn-small" onclick="resumeLearning(${continueItem.courseId}, ${continueItem.lessonId})">继续学习</button>
+                    </div>
+                `;
+            } else {
+                continueCard.innerHTML = `
+                    <div class="learning-focus-label">继续学习入口</div>
+                    <div class="learning-focus-main">从第一课开始</div>
+                    <div class="learning-focus-sub">还没有学习记录时，我会先把你的首页保持简洁。</div>
+                `;
+            }
+
+            if (recommendedItem) {
+                recommendedCard.innerHTML = `
+                    <div class="learning-focus-label">课程推荐</div>
+                    <div class="learning-focus-main">推荐课程：${escapeHtml(recommendedItem.levelName || recommendedItem.level || "下一阶段")}</div>
+                    <div class="learning-focus-sub">课程：${escapeHtml(recommendedItem.courseTitle || "推荐课程")}<br>建议从：${escapeHtml(recommendedItem.firstLessonTitle || "第一课")} 开始<br>${escapeHtml(recommendedItem.reason || "继续按顺序学，体验会更顺。")}</div>
+                    <div class="learning-focus-actions">
+                        <button class="btn btn-secondary btn-small" onclick="openRecommendedCourse(${recommendedItem.courseId}, ${recommendedItem.firstLessonId})">查看推荐</button>
+                    </div>
+                `;
+            } else {
+                recommendedCard.innerHTML = `
+                    <div class="learning-focus-label">课程推荐</div>
+                    <div class="learning-focus-main">继续当前学习路径</div>
+                    <div class="learning-focus-sub">当你完整学完一个阶段后，我会自动把下一阶段推荐到这里。</div>
+                `;
+            }
         }
 
         function renderAchievementWall(achievements) {
@@ -3229,6 +3357,7 @@
             if (!token) {
                 userStats = null;
                 renderUserCenter();
+                renderLearningFocus();
                 return;
             }
 
@@ -3271,7 +3400,7 @@
                             <div class="course-card-meta">
                                 <span class="level level-${escapeHtml(course.level)}">${levelLabel}</span>
                                 <span class="course-chip course-chip-neutral">${lessonCountLabel}</span>
-                                <span class="course-chip course-chip-warm">${progress.completed} / ${progress.total || 0} 已完成</span>
+                                <span class="course-chip course-chip-warm">已完成 ${progress.completed} / ${progress.total || 0} 课时</span>
                             </div>
                             <p class="course-card-desc">${safeDescription}</p>
                             <div class="course-card-progress">
@@ -3284,7 +3413,7 @@
                                 </div>
                                 <div class="course-progress-footer">
                                     <span class="${progressStatusClass}">${progress.statusText}</span>
-                                    <span>${progress.total > 0 ? `已完成 ${progress.completed} / ${progress.total}` : "等待课程内容"}</span>
+                                    <span>${progress.total > 0 ? `已完成 ${progress.completed} / ${progress.total} 课时` : "等待课程内容"}</span>
                                 </div>
                             </div>
                             <div class="course-card-progress">
@@ -3325,6 +3454,31 @@
             const course = courses[index];
             if (!course) return;
             selectCourse(course);
+        }
+
+        async function resumeLearning(courseId, lessonId) {
+            await openCourseAndLesson(courseId, lessonId);
+        }
+
+        async function openRecommendedCourse(courseId, lessonId) {
+            await openCourseAndLesson(courseId, lessonId);
+        }
+
+        async function openCourseAndLesson(courseId, lessonId) {
+            const courses = window.__courses || [];
+            const course = courses.find((item) => item.id === courseId);
+            if (!course) return;
+
+            selectCourse(course);
+            if (!courseDetailsById[courseId]) {
+                await loadCourseDetail(courseId);
+            }
+
+            const lessons = courseDetailsById[courseId]?.lessons || [];
+            const lessonIndex = lessons.findIndex((item) => item.id === lessonId);
+            if (lessonIndex >= 0) {
+                openLessonByIndex(lessonIndex);
+            }
         }
 
         function selectCourse(course) {
