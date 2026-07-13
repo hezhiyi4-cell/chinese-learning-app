@@ -15,6 +15,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            -webkit-tap-highlight-color: transparent;
         }
         body.modal-open {
             overflow: hidden;
@@ -51,6 +52,8 @@
             font-size: 1em;
             transition: all 0.3s;
             font-weight: 500;
+            min-height: 44px;
+            touch-action: manipulation;
         }
         .btn:disabled {
             opacity: 0.6;
@@ -81,6 +84,7 @@
         .btn-small {
             padding: 8px 14px;
             font-size: 0.9em;
+            min-height: 38px;
         }
         .form-group {
             margin-bottom: 16px;
@@ -103,6 +107,7 @@
             border-radius: 6px;
             font-size: 1em;
             background: white;
+            min-height: 46px;
         }
         input:focus, textarea:focus, select:focus {
             outline: none;
@@ -111,6 +116,12 @@
         textarea {
             min-height: 110px;
             resize: vertical;
+        }
+        button,
+        input,
+        textarea,
+        select {
+            touch-action: manipulation;
         }
         .course-grid {
             display: grid;
@@ -793,6 +804,7 @@
             font-size: 0.86em;
             font-weight: 800;
             cursor: pointer;
+            min-height: 40px;
         }
         .leaderboard-tab.active {
             background: linear-gradient(135deg, #667eea 0%, #8b78ff 100%);
@@ -926,6 +938,7 @@
             font-size: 0.84em;
             font-weight: 800;
             cursor: pointer;
+            min-height: 40px;
         }
         .payment-pill.active {
             background: linear-gradient(135deg, #667eea 0%, #8b78ff 100%);
@@ -981,6 +994,7 @@
             cursor: pointer;
             text-decoration: none;
             transition: all 0.25s ease;
+            min-height: 40px;
         }
         .policy-link:hover {
             background: #eef1ff;
@@ -1428,9 +1442,27 @@
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 600;
+            min-height: 40px;
         }
         .template-chip:hover {
             background: #eaecff;
+        }
+        .leaderboard-tab,
+        .policy-link,
+        .payment-pill,
+        .template-chip {
+            touch-action: manipulation;
+        }
+        .btn:focus-visible,
+        .policy-link:focus-visible,
+        .leaderboard-tab:focus-visible,
+        .payment-pill:focus-visible,
+        .template-chip:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: 3px solid rgba(102, 126, 234, 0.22);
+            outline-offset: 2px;
         }
         .draggable-row {
             cursor: grab;
@@ -1494,12 +1526,78 @@
                 transform: translateY(0);
             }
         }
+        @media (max-width: 1100px) {
+            body {
+                padding: 16px;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .header {
+                margin-bottom: 28px;
+            }
+            .header h1 {
+                font-size: 2.2em;
+            }
+            .card {
+                padding: 24px 22px;
+                border-radius: 16px;
+            }
+            .user-stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .achievement-grid,
+            .learning-focus-grid,
+            .payment-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .course-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 18px;
+            }
+            .course-card-body {
+                padding: 18px;
+            }
+            .course-card-title {
+                font-size: 1.04em;
+            }
+            .course-card-desc {
+                font-size: 0.94em;
+                min-height: 52px;
+            }
+            .lesson-item {
+                padding: 16px;
+            }
+            .lesson-item h4 {
+                font-size: 1.02em;
+                line-height: 1.45;
+            }
+            .lesson-item p {
+                font-size: 0.95em;
+                line-height: 1.6;
+            }
+            .chat-box {
+                padding: 18px;
+            }
+            .chat-messages {
+                height: 280px;
+            }
+            .payment-order-item {
+                padding: 14px 16px;
+            }
+        }
         @media (max-width: 900px) {
             .admin-layout {
                 grid-template-columns: 1fr;
             }
             .container {
                 max-width: 100%;
+            }
+            .user-stats-grid,
+            .achievement-grid,
+            .learning-focus-grid,
+            .payment-grid {
+                grid-template-columns: 1fr;
             }
             .filter-row {
                 grid-template-columns: 1fr;
@@ -1508,7 +1606,7 @@
                 grid-template-columns: 1fr;
             }
             .course-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             .panel-header {
                 align-items: flex-start;
@@ -1566,6 +1664,10 @@
             .achievement-grid {
                 grid-template-columns: 1fr;
             }
+            .learning-focus-grid,
+            .course-grid {
+                grid-template-columns: 1fr;
+            }
             .leaderboard-item {
                 grid-template-columns: 44px minmax(0, 1fr);
             }
@@ -1604,6 +1706,12 @@
             }
             .lesson-item {
                 padding: 14px;
+            }
+            .lesson-item h4 {
+                font-size: 1em;
+            }
+            .lesson-item p {
+                font-size: 0.92em;
             }
             .chat-box {
                 padding: 14px;
@@ -1653,10 +1761,13 @@
             }
             .btn {
                 width: 100%;
-                padding: 11px 16px;
+                padding: 12px 16px;
+                min-height: 46px;
+                font-size: 1rem;
             }
             .btn.btn-small {
                 width: auto;
+                min-height: 40px;
             }
             .header-actions {
                 flex-direction: column;
@@ -1667,8 +1778,9 @@
                 flex: none;
             }
             input, textarea, select {
-                padding: 11px;
+                padding: 12px;
                 font-size: 16px;
+                min-height: 48px;
             }
             .course-card-badges {
                 top: 10px;
@@ -1684,6 +1796,24 @@
             }
             .course-card-meta {
                 gap: 6px;
+            }
+            .learning-focus-panel,
+            .user-center-panel,
+            .payment-panel,
+            .achievement-wall,
+            .leaderboard-panel {
+                padding: 14px;
+                border-radius: 14px;
+            }
+            .learning-focus-main,
+            .user-stat-value {
+                font-size: 1.22em;
+            }
+            .learning-focus-sub,
+            .payment-copy,
+            .leaderboard-copy,
+            .achievement-desc {
+                font-size: 0.92em;
             }
             .course-chip,
             .course-card .level,
@@ -1729,6 +1859,29 @@
             }
             table {
                 min-width: 620px;
+            }
+        }
+        @media (hover: none) and (pointer: coarse) {
+            .course-card:hover,
+            .achievement-card:hover {
+                transform: none;
+            }
+            .btn-primary:hover:not(:disabled),
+            .btn-secondary:hover:not(:disabled),
+            .btn-danger:hover:not(:disabled),
+            .policy-link:hover,
+            .template-chip:hover {
+                background: inherit;
+                transform: none;
+                box-shadow: none;
+            }
+            .course-card:active,
+            .btn:active,
+            .policy-link:active,
+            .leaderboard-tab:active,
+            .payment-pill:active,
+            .template-chip:active {
+                transform: scale(0.99);
             }
         }
     </style>
