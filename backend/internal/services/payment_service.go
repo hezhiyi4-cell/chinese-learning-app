@@ -122,8 +122,8 @@ func (s *PaymentService) CreateCheckout(userID uint, req CreateCheckoutRequest) 
 		return nil, err
 	}
 
-	successURL := s.defaultSuccessURL()
-	cancelURL := s.defaultCancelURL()
+	successURL := s.defaultSuccessURL(order.ID)
+	cancelURL := s.defaultCancelURL(order.ID)
 	if req.SuccessURL != "" {
 		successURL = req.SuccessURL
 	}
@@ -350,12 +350,12 @@ func normalizeGateway(gateway string) string {
 	return gateway
 }
 
-func (s *PaymentService) defaultSuccessURL() string {
-	return s.frontendBaseURL + "/web.html?payment=success"
+func (s *PaymentService) defaultSuccessURL(orderID uint) string {
+	return fmt.Sprintf("%s/web.html?payment=success&orderId=%d", s.frontendBaseURL, orderID)
 }
 
-func (s *PaymentService) defaultCancelURL() string {
-	return s.frontendBaseURL + "/web.html?payment=cancel"
+func (s *PaymentService) defaultCancelURL(orderID uint) string {
+	return fmt.Sprintf("%s/web.html?payment=cancel&orderId=%d", s.frontendBaseURL, orderID)
 }
 
 func ptrTime(t time.Time) *time.Time {

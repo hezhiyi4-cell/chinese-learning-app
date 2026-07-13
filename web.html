@@ -768,6 +768,12 @@
             font-size: 0.88em;
             line-height: 1.55;
         }
+        .payment-head-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
         .payment-pill-row {
             display: flex;
             flex-wrap: wrap;
@@ -824,6 +830,24 @@
             color: #5b6583;
             font-size: 0.82em;
             font-weight: 700;
+        }
+        .policy-link {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #dfe3ff;
+            background: #f8f9ff;
+            color: #5560d8;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.84em;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .policy-link:hover {
+            background: #eef1ff;
+            border-color: #cbd4ff;
         }
         .payment-section-title {
             margin: 16px 0 10px;
@@ -937,6 +961,72 @@
             font-size: 1.2em;
             font-weight: 800;
             color: #333;
+        }
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 999px;
+            background: #f3f5ff;
+            color: #4f58d8;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 800;
+        }
+        .policy-modal-copy {
+            margin-top: 4px;
+            color: #717894;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .policy-modal-body {
+            max-height: min(70vh, 620px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .policy-section {
+            padding: 16px 0;
+            border-top: 1px solid #edf0ff;
+        }
+        .policy-section:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+        .policy-section-title {
+            color: #283049;
+            font-size: 1em;
+            font-weight: 800;
+        }
+        .policy-section-copy {
+            margin-top: 8px;
+            color: #5f6784;
+            font-size: 0.93em;
+            line-height: 1.8;
+        }
+        .policy-list {
+            margin-top: 10px;
+            padding-left: 18px;
+            color: #5f6784;
+            font-size: 0.93em;
+            line-height: 1.8;
+        }
+        .policy-list li + li {
+            margin-top: 6px;
+        }
+        .auth-legal-links {
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid #edf0ff;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .celebration-message {
             margin-top: 10px;
@@ -1521,6 +1611,12 @@
                 <button class="btn btn-primary" onclick="login()">登录</button>
                 <button class="btn btn-secondary" onclick="showRegister()">注册账号</button>
             </div>
+
+            <div class="auth-legal-links">
+                <button class="policy-link" onclick="openPolicyModal('privacy')">隐私政策</button>
+                <button class="policy-link" onclick="openPolicyModal('terms')">服务条款</button>
+                <button class="policy-link" onclick="openPolicyModal('refund')">退款政策</button>
+            </div>
         </div>
 
         <div id="home-page" class="hidden">
@@ -1593,6 +1689,9 @@
                             <div>
                                 <div class="payment-title">支付中心</div>
                                 <div id="payment-copy" class="payment-copy">已预留多支付系统接口，当前优先接入 PayPal Sandbox。</div>
+                            </div>
+                            <div class="payment-head-actions">
+                                <button class="policy-link" onclick="openPolicyModal('refund')">退款政策</button>
                             </div>
                         </div>
                         <div class="payment-section-title">支付通道</div>
@@ -1865,6 +1964,19 @@
         </div>
     </div>
 
+    <div id="policy-modal" class="modal-overlay hidden" onclick="handlePolicyOverlayClick(event)">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <div id="policy-modal-title" class="section-title">政策说明</div>
+                    <div id="policy-modal-copy" class="policy-modal-copy">以下内容为通用模板，后续可替换成正式版本。</div>
+                </div>
+                <button class="modal-close" onclick="closePolicyModal()">×</button>
+            </div>
+            <div id="policy-modal-body" class="policy-modal-body"></div>
+        </div>
+    </div>
+
     <script src="./config.js?v=20260710-1"></script>
     <script>
         const API_BASE = "https://chinese-learning-api-wsud.onrender.com/api/v1";
@@ -1900,12 +2012,14 @@
         let adminCourseThumbnail = "";
         let adminCourseCoverFile = null;
         let courseCoverPreviewObjectUrl = "";
+        let activePolicyType = "privacy";
 
         window.onload = function() {
             if (token && user) {
                 showHome();
             } else {
                 showRegister();
+                handlePaymentRedirectIfAny();
             }
         };
 
@@ -2374,6 +2488,218 @@
             }
         }
 
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search || "");
+            return params.get(name);
+        }
+
+        function clearPaymentQueryParams() {
+            const url = new URL(window.location.href);
+            ["payment", "orderId", "token", "PayerID", "payerId"].forEach((key) => url.searchParams.delete(key));
+            window.history.replaceState({}, "", url.toString());
+        }
+
+        function getPolicyDocument(type) {
+            const documents = {
+                privacy: {
+                    title: "隐私政策",
+                    copy: "本隐私政策由 FENGYAO E-COM（烽垚電商）发布，用于说明我们如何收集、使用、保存及保护你的个人资料，并尽量以清晰方式说明你在香港《个人资料（私隐）条例》下可行使的相关权利。",
+                    sections: [
+                        {
+                            title: "1. 我们收集哪些资料",
+                            copy: "FENGYAO E-COM（烽垚電商）（以下简称“我们”）在你注册、登录、购买会员、使用课程或联络我们时，可能收集与你有关的资料，包括你主动提供的资料，以及你在使用服务过程中产生的必要记录。",
+                            bullets: [
+                                "账户资料：例如邮箱地址、昵称、登录凭证及账户识别信息",
+                                "交易资料：例如订单编号、订阅状态、付款结果、退款记录",
+                                "学习资料：例如课程进度、完成记录、积分、互动操作记录",
+                                "技术资料：例如设备类型、浏览器信息、访问时间、日志与基本故障排查信息",
+                            ],
+                        },
+                        {
+                            title: "2. 我们为何收集这些资料",
+                            copy: "我们只会为与你使用本服务直接相关、合法且合理的目的收集个人资料，并尽量遵循“足够但不过量”的原则。相关用途通常包括：建立与管理账户、提供课程与会员服务、确认支付及退款、处理查询、改进产品功能、保障系统安全及履行适用法律要求。",
+                        },
+                        {
+                            title: "3. 提供资料是否属于必须",
+                            copy: "部分资料属于提供服务所必需，例如注册账号、登录、支付及客户支持所需资料。若你不提供有关资料，我们可能无法为你创建账户、处理订单、提供已购买权益或回应相关请求。其他非必要资料如属自愿提供，我们会尽量在收集时作出说明。",
+                        },
+                        {
+                            title: "4. 我们如何使用及披露资料",
+                            copy: "你的个人资料会用于原本收集目的或与其直接相关的用途。除非获得你的同意、属于服务履行所需，或法律另有要求，我们不会把你的个人资料用于无关用途。",
+                            bullets: [
+                                "支付处理：为完成付款、对账、退款及风险控制，我们可能与支付服务商共享必要交易资料",
+                                "技术运维：我们可能使用云服务、日志监控或客服工具处理必要资料，以保障服务稳定与安全",
+                                "合规要求：如适用法律、监管机构或执法机关要求，我们可能在必要范围内作出披露",
+                            ],
+                        },
+                        {
+                            title: "5. 资料保存与安全",
+                            copy: "我们会采取合理可行的技术与管理措施，保护个人资料免遭未经授权或意外的查阅、处理、删除、遗失或使用。我们亦会在完成收集目的后，于合理期间内删除、匿名化或停止保留不再需要的资料，除非法律要求我们保留更长时间。",
+                        },
+                        {
+                            title: "6. 查阅及更正个人资料",
+                            copy: "你有权要求查阅我们持有的你的个人资料，并在资料不准确时要求更正。你也可以要求更新账户资料或就隐私事宜与我们联络。我们会在合理时间内处理相关请求，并可在法律允许范围内就特别复杂的请求收取合理费用。",
+                        },
+                        {
+                            title: "7. 联络我们",
+                            copy: "如你对本隐私政策、个人资料使用方式或查阅及更正请求有疑问，可通过以下方式与我们联络：客服邮箱 cs.box58@gmail.com；备用邮箱 AC1314@qq.com；客服电话 00852 53707462；WhatsApp 00852 53707462。若你认为你的个人资料被不当处理，你亦可考虑向香港个人资料私隐专员公署查询相关权利。",
+                        },
+                    ],
+                },
+                terms: {
+                    title: "服务条款",
+                    copy: "本平台由 FENGYAO E-COM（烽垚電商）（以下简称“我们”）运营。本服务条款说明你在使用本应用及相关数字服务时的主要权利、责任与适用规则，我们尽量以清晰、易懂的方式说明双方的基本安排。",
+                    sections: [
+                        {
+                            title: "1. 服务说明",
+                            copy: "本应用主要提供中文学习课程、进度记录、互动练习、会员订阅及其他相关数字内容服务。具体功能、价格、可用范围、开放时间及展示方式，以应用内实际页面说明为准。",
+                        },
+                        {
+                            title: "2. 用户权利",
+                            copy: "在遵守本条款及完成所需付款的前提下，你有权按照应用内说明使用已开通的课程、会员权益及相关功能；你亦有权查阅订单状态、联系客户支持，并按退款政策申请处理符合条件的退款事项。",
+                        },
+                        {
+                            title: "3. 用户责任",
+                            copy: "你需要确保注册资料真实、准确并及时更新，妥善保管账户、密码及登录设备。你不得利用本服务从事违法、欺诈、侵权、攻击系统、干扰他人正常使用或其他不当行为。若因你违反本条款造成损失，你可能需要承担相应责任。",
+                            bullets: [
+                                "不得冒用他人身份或未经授权使用他人支付工具",
+                                "不得上传、传播违法、侵权、侮辱性或恶意内容",
+                                "不得以自动化、批量方式滥用接口、爬取内容或规避系统限制",
+                            ],
+                        },
+                        {
+                            title: "4. 付费服务与订单生效",
+                            copy: "部分课程、会员功能或数字内容属于付费服务。你完成付款后，系统会按订单状态开通对应权益。若因支付失败、风控拦截、系统异常或第三方支付平台原因导致交易未完成，则以实际付款结果及订单状态为准。",
+                        },
+                        {
+                            title: "5. 免责与服务限制",
+                            copy: "我们会尽合理努力保持服务稳定、安全和准确，但无法保证服务在任何时间均不中断、无错误或完全符合所有用户的个别期待。对于因网络故障、第三方平台异常、不可抗力、设备兼容问题或用户自身操作不当造成的损失，在适用法律允许范围内，我们的责任将受合理限制。",
+                        },
+                        {
+                            title: "6. 知识产权与使用范围",
+                            copy: "本应用中的课程内容、界面设计、文字、图像、音频、视频、程序代码及相关资料，除另有说明外，均由我们或相关权利人依法享有权利。未经书面许可，你不得复制、转售、公开传播、改作或用于超出个人学习用途以外的商业用途。",
+                        },
+                        {
+                            title: "7. 条款更新与联系",
+                            copy: "我们可能因业务调整、法律变化或产品升级更新本条款。更新版本会在应用内公布，并自公布或注明日期起生效。你在更新后继续使用服务，一般视为已阅读并接受新条款。如你不同意更新内容，可停止使用相关服务并按适用政策处理未完成订单或订阅事宜。如需联络我们，可使用客服邮箱 cs.box58@gmail.com、备用邮箱 AC1314@qq.com、客服电话 00852 53707462 或 WhatsApp 00852 53707462。",
+                        },
+                    ],
+                },
+                refund: {
+                    title: "退款政策",
+                    copy: "本退款政策说明你在购买会员、课程或其他数字内容后，申请退款的一般规则。我们会尽量以公平、清楚和可执行的方式处理退款事项，并不会限制你在适用香港法律下享有的法定权利。",
+                    sections: [
+                        {
+                            title: "1. 适用范围",
+                            copy: "本政策适用于通过本应用购买的会员订阅、数字课程、数字权益及相关在线服务。不同商品类型、支付渠道、交付状态和使用情况，可能适用不同处理方式。具体规则如有在结账页、活动页或商品页另行说明的，以相关页面说明为准。",
+                        },
+                        {
+                            title: "2. 可申请退款的常见情形",
+                            copy: "在下列情况下，你可在合理时间内联系客服提交退款申请，我们会根据订单状态、支付记录及实际使用情况审核处理：",
+                            bullets: [
+                                "重复扣款或重复下单",
+                                "付款成功但相应权益未开通，且经核实后无法在合理时间内补发",
+                                "因我们的系统或技术故障，导致已购买的主要付费内容在合理时间内无法使用",
+                                "商品或服务与结账页、商品页的重要描述明显不符",
+                            ],
+                        },
+                        {
+                            title: "3. 一般不适用退款的情形",
+                            copy: "以下情况通常不适用全额退款，或仅可在核实后作部分退款处理：",
+                            bullets: [
+                                "数字内容或会员权益已经明显开始使用，且主要内容已被实际交付",
+                                "因你个人原因不再需要服务，或因设备、网络、地区限制等非我们原因导致使用受影响",
+                                "因违反服务条款、滥用优惠、异常交易或欺诈风险而被限制服务的订单",
+                            ],
+                        },
+                        {
+                            title: "4. 退款申请与处理方式",
+                            copy: "你可通过应用内客服或以下官方联系方式提交退款申请，并尽量提供订单编号、付款时间、问题说明及必要截图。客服邮箱：cs.box58@gmail.com；备用邮箱：AC1314@qq.com；客服电话：00852 53707462；WhatsApp：00852 53707462。我们通常会在合理时间内完成审核，并按订单情况作出补发权益、部分退款、全额退款或不予退款的处理。",
+                        },
+                        {
+                            title: "5. 到账时间与支付渠道",
+                            copy: "退款一经批准，我们会按原支付路径或支付平台允许的方式退回。实际到账时间可能受支付服务商、银行、信用卡机构或账户结算周期影响，通常不会由我们单方面即时控制。",
+                        },
+                        {
+                            title: "6. 法定权利保留",
+                            copy: "本政策旨在说明一般退款处理规则，并不会排除、限制或替代你在适用香港法律下可能享有的任何法定权利。如本政策与不可排除的法定消费者权利有不一致之处，应以适用法律要求为准。",
+                        },
+                    ],
+                },
+            };
+            return documents[type] || documents.privacy;
+        }
+
+        function renderPolicySections(sections) {
+            return (sections || []).map((section) => `
+                <div class="policy-section">
+                    <div class="policy-section-title">${escapeHtml(section.title || "")}</div>
+                    <div class="policy-section-copy">${escapeHtml(section.copy || "")}</div>
+                    ${(section.bullets || []).length ? `<ul class="policy-list">${section.bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
+                </div>
+            `).join("");
+        }
+
+        function openPolicyModal(type) {
+            activePolicyType = type || "privacy";
+            const modal = document.getElementById("policy-modal");
+            const titleEl = document.getElementById("policy-modal-title");
+            const copyEl = document.getElementById("policy-modal-copy");
+            const bodyEl = document.getElementById("policy-modal-body");
+            if (!modal || !titleEl || !copyEl || !bodyEl) return;
+
+            const doc = getPolicyDocument(activePolicyType);
+            titleEl.textContent = doc.title || "政策说明";
+            copyEl.textContent = doc.copy || "";
+            bodyEl.innerHTML = renderPolicySections(doc.sections);
+            modal.classList.remove("hidden");
+        }
+
+        function closePolicyModal() {
+            const modal = document.getElementById("policy-modal");
+            if (!modal) return;
+            modal.classList.add("hidden");
+        }
+
+        function handlePolicyOverlayClick(event) {
+            if (event.target?.id === "policy-modal") {
+                closePolicyModal();
+            }
+        }
+
+        async function handlePaymentRedirectIfAny() {
+            const payment = getQueryParam("payment");
+            const orderIdRaw = getQueryParam("orderId");
+            const orderId = orderIdRaw ? Number(orderIdRaw) : 0;
+            if (!payment) return;
+
+            if (payment === "cancel") {
+                clearPaymentQueryParams();
+                alert("已取消支付，如需继续可重新下单。");
+                return;
+            }
+
+            if (payment !== "success") {
+                return;
+            }
+
+            if (!orderId || Number.isNaN(orderId)) {
+                clearPaymentQueryParams();
+                alert("支付回跳成功，但缺少订单信息，请在支付中心查看最近订单并点击“确认支付”。");
+                return;
+            }
+
+            if (!token) {
+                localStorage.setItem("pending_payment_order_id", String(orderId));
+                clearPaymentQueryParams();
+                showLogin();
+                return;
+            }
+
+            clearPaymentQueryParams();
+            await confirmPaymentOrder(orderId);
+        }
+
         function getPaymentStatusClass(status) {
             const value = String(status || "").toLowerCase();
             if (value === "paid") return "paid";
@@ -2545,6 +2871,7 @@
             loadCourses();
             loadLeaderboard("global");
             loadPaymentCatalog();
+            handlePaymentRedirectIfAny();
         }
 
         function openAdminPage() {
@@ -2617,6 +2944,14 @@
                     localStorage.setItem("user", JSON.stringify(user));
                     alert("登录成功！");
                     showHome();
+                    const pendingOrderId = localStorage.getItem("pending_payment_order_id");
+                    if (pendingOrderId) {
+                        localStorage.removeItem("pending_payment_order_id");
+                        const orderId = Number(pendingOrderId);
+                        if (orderId && !Number.isNaN(orderId)) {
+                            await confirmPaymentOrder(orderId);
+                        }
+                    }
                 } else {
                     alert(data.message || data.error || "登录失败，请检查账号密码");
                 }
@@ -3608,6 +3943,7 @@
         function closeAllModals() {
             closeCourseModal();
             closeLessonModal();
+            closePolicyModal();
         }
 
         function showCelebration(message) {
