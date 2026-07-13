@@ -4,6 +4,9 @@ import (
 	"chinese-learning-app/internal/models"
 	"chinese-learning-app/internal/repositories"
 	"math"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -425,8 +428,12 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 	completedCourses := 0
 	var courseProgress []CourseProgressItem
 	snapshots := make([]courseSnapshot, 0, len(courses))
+	lessonIndexByID := map[uint]struct {
+		snapshotIndex int
+		lessonIndex   int
+	}{}
 
-	for _, course := range courses {
+	for courseIndex, course := range courses {
 		lessons, err := s.courseRepo.GetLessons(course.ID)
 		if err != nil {
 			return nil, err
@@ -446,6 +453,11 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 		totalLessons += len(lessons)
 
 		for index, lesson := range lessons {
+			lessonIndexByID[lesson.ID] = struct {
+				snapshotIndex int
+				lessonIndex   int
+			}{snapshotIndex: courseIndex, lessonIndex: index}
+
 			p, ok := progressByLessonID[lesson.ID]
 			if !ok || !isCompletedStatus(p.Status) {
 				if snapshot.firstIncompleteIndex == -1 {
@@ -493,7 +505,7 @@ func (s *ProgressService) buildStatsFromSnapshot(progressList []models.UserProgr
 	}
 
 	currentRankMinXP, nextRank, nextRankMinXP, rankProgress, xpToNextRank := rankProgressMeta(totalXP)
-	continueLearning := deriveContinueLearning(snapshots)
+	continueLearning := deriveContinueLearning(progressList, progressByLessonID, snapshots, lessonIndexByID)
 	recommendedCourse := deriveRecommendedCourse(snapshots)
 
 	return &StatsResponse{
@@ -736,23 +748,72 @@ func selectNearbyEntries(entries []LeaderboardEntry, userID uint, window int) []
 	return entries[start:end]
 }
 
-func deriveContinueLearning(snapshots []courseSnapshot) *ContinueLearningItem {
-	for _, snapshot := range snapshots {
-		if snapshot.total == 0 || snapshot.completed == 0 || snapshot.completed >= snapshot.total || snapshot.firstIncompleteIndex < 0 {
-			continue
+func deriveContinueLearning(
+	progressList []models.UserProgress,
+	progressByLessonID map[uint]models.UserProgress,
+	snapshots []courseSnapshot,
+	lessonIndexByID map[uint]struct {
+		snapshotIndex int
+		lessonIndex   int
+	},
+) *ContinueLearningItem {
+	lastProgress, ok := latestProgress(progressList)
+	if ok {
+		loc, found := lessonIndexByID[lastProgress.LessonID]
+		if found && loc.snapshotIndex >= 0 && loc.snapshotIndex < len(snapshots) {
+			snapshot := snapshots[loc.snapshotIndex]
+
+			if !isCompletedStatus(lastProgress.Status) {
+				return buildContinueLearningItem(snapshot, loc.lessonIndex)
+			}
+
+			for nextIndex := loc.lessonIndex + 1; nextIndex < len(snapshot.lessons); nextIndex++ {
+				lesson := snapshot.lessons[nextIndex]
+				p, hasProgress := progressByLessonID[lesson.ID]
+				if !hasProgress || !isCompletedStatus(p.Status) {
+					return buildContinueLearningItem(snapshot, nextIndex)
+				}
+			}
+
+			if snapshot.firstIncompleteIndex >= 0 && snapshot.firstIncompleteIndex < len(snapshot.lessons) {
+				return buildContinueLearningItem(snapshot, snapshot.firstIncompleteIndex)
+			}
+
+			for snapshotIndex := loc.snapshotIndex + 1; snapshotIndex < len(snapshots); snapshotIndex++ {
+				nextSnapshot := snapshots[snapshotIndex]
+				if nextSnapshot.total == 0 || nextSnapshot.completed >= nextSnapshot.total {
+					continue
+				}
+				nextLessonIndex := nextSnapshot.firstIncompleteIndex
+				if nextLessonIndex < 0 {
+					nextLessonIndex = 0
+				}
+				return buildContinueLearningItem(nextSnapshot, nextLessonIndex)
+			}
+
+			for snapshotIndex := 0; snapshotIndex < loc.snapshotIndex; snapshotIndex++ {
+				nextSnapshot := snapshots[snapshotIndex]
+				if nextSnapshot.total == 0 || nextSnapshot.completed >= nextSnapshot.total {
+					continue
+				}
+				nextLessonIndex := nextSnapshot.firstIncompleteIndex
+				if nextLessonIndex < 0 {
+					nextLessonIndex = 0
+				}
+				return buildContinueLearningItem(nextSnapshot, nextLessonIndex)
+			}
 		}
-		return buildContinueLearningItem(snapshot, snapshot.firstIncompleteIndex)
 	}
 
 	for _, snapshot := range snapshots {
 		if snapshot.total == 0 || snapshot.completed >= snapshot.total {
 			continue
 		}
-		targetIndex := snapshot.firstIncompleteIndex
-		if targetIndex < 0 {
-			targetIndex = 0
+		lessonIndex := snapshot.firstIncompleteIndex
+		if lessonIndex < 0 {
+			lessonIndex = 0
 		}
-		return buildContinueLearningItem(snapshot, targetIndex)
+		return buildContinueLearningItem(snapshot, lessonIndex)
 	}
 
 	return nil
@@ -808,6 +869,10 @@ func deriveRecommendedCourse(snapshots []courseSnapshot) *RecommendedCourseItem 
 		}
 	}
 
+	sort.SliceStable(orderedLevels, func(i, j int) bool {
+		return courseLevelRank(orderedLevels[i]) < courseLevelRank(orderedLevels[j])
+	})
+
 	for index, levelKey := range orderedLevels {
 		summary := levelSummaries[levelKey]
 		if summary == nil || summary.totalCourses == 0 || summary.completedCourses != summary.totalCourses {
@@ -861,4 +926,42 @@ func displayCourseLevel(course models.Course) string {
 		return course.Level
 	}
 	return "当前阶段"
+}
+
+func latestProgress(progressList []models.UserProgress) (models.UserProgress, bool) {
+	if len(progressList) == 0 {
+		return models.UserProgress{}, false
+	}
+	best := progressList[0]
+	bestTime := progressTimestamp(best)
+	for _, item := range progressList[1:] {
+		current := progressTimestamp(item)
+		if current.After(bestTime) {
+			best = item
+			bestTime = current
+		}
+	}
+	return best, true
+}
+
+func progressTimestamp(progress models.UserProgress) time.Time {
+	best := progress.UpdatedAt
+	if progress.CompletedAt != nil && progress.CompletedAt.After(best) {
+		best = *progress.CompletedAt
+	}
+	return best
+}
+
+func courseLevelRank(level string) int {
+	value := strings.TrimSpace(level)
+	if value == "" {
+		return 1_000_000
+	}
+	if strings.HasPrefix(strings.ToUpper(value), "L") {
+		number, err := strconv.Atoi(strings.TrimPrefix(strings.ToUpper(value), "L"))
+		if err == nil {
+			return number
+		}
+	}
+	return 1_000_000
 }

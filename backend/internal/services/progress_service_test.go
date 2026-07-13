@@ -54,7 +54,7 @@ func createCourseWithLessons(t *testing.T, courseRepo *repositories.CourseReposi
 func createLessonProgress(t *testing.T, progressRepo *repositories.ProgressRepository, userID, lessonID uint, status string, score int) {
 	t.Helper()
 
-	now := time.Now()
+	now := time.Now().Add(time.Duration(lessonID) * time.Millisecond)
 	progress := &models.UserProgress{
 		UserID:      userID,
 		LessonID:    lessonID,
@@ -162,5 +162,75 @@ func TestGetUserStatsRecommendsL1AfterCompletingL0(t *testing.T) {
 	}
 	if stats.ContinueLearning == nil || stats.ContinueLearning.CourseID != l1Course.ID {
 		t.Fatal("expected continue learning to move to the first lesson of the recommended L1 course")
+	}
+}
+
+func TestGetUserStatsRecommendsL2AfterCompletingL1(t *testing.T) {
+	service, userRepo, courseRepo, progressRepo := newProgressServiceForTest(t)
+
+	user := &models.User{Email: "levelup@example.com", PasswordHash: "hash", Nickname: "升级学习者"}
+	if err := userRepo.Create(user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	l0Course := createCourseWithLessons(t, courseRepo, &models.Course{
+		Title:       "L0 基础",
+		Description: "从最基础开始",
+		Level:       "L0",
+		LevelName:   "L0",
+		SortOrder:   1,
+		IsPublished: true,
+	}, "L0 第一课", "L0 第二课")
+	l1Course := createCourseWithLessons(t, courseRepo, &models.Course{
+		Title:       "L1 进阶",
+		Description: "进入进阶训练",
+		Level:       "L1",
+		LevelName:   "L1",
+		SortOrder:   2,
+		IsPublished: true,
+	}, "L1 第一课", "L1 第二课")
+	l2Course := createCourseWithLessons(t, courseRepo, &models.Course{
+		Title:       "L2 熟练",
+		Description: "熟练表达与应用",
+		Level:       "L2",
+		LevelName:   "L2",
+		SortOrder:   3,
+		IsPublished: true,
+	}, "L2 第一课", "L2 第二课")
+
+	l0Lessons, err := courseRepo.GetLessons(l0Course.ID)
+	if err != nil {
+		t.Fatalf("get l0 lessons: %v", err)
+	}
+	for _, lesson := range l0Lessons {
+		createLessonProgress(t, progressRepo, user.ID, lesson.ID, "perfected", 100)
+	}
+
+	l1Lessons, err := courseRepo.GetLessons(l1Course.ID)
+	if err != nil {
+		t.Fatalf("get l1 lessons: %v", err)
+	}
+	for _, lesson := range l1Lessons {
+		createLessonProgress(t, progressRepo, user.ID, lesson.ID, "perfected", 100)
+	}
+
+	stats, err := service.GetUserStats(user.ID)
+	if err != nil {
+		t.Fatalf("get user stats: %v", err)
+	}
+	if stats.RecommendedCourse == nil {
+		t.Fatal("expected recommended course")
+	}
+	if stats.RecommendedCourse.CourseID != l2Course.ID {
+		t.Fatalf("expected recommended course %d, got %d", l2Course.ID, stats.RecommendedCourse.CourseID)
+	}
+	if stats.RecommendedCourse.Level != "L2" {
+		t.Fatalf("expected recommended level L2, got %q", stats.RecommendedCourse.Level)
+	}
+	if stats.ContinueLearning == nil || stats.ContinueLearning.CourseID != l2Course.ID {
+		t.Fatal("expected continue learning to move to the first lesson of the recommended L2 course")
+	}
+	if stats.ContinueLearning.LessonOrder != 1 {
+		t.Fatalf("expected continue learning lesson order 1, got %d", stats.ContinueLearning.LessonOrder)
 	}
 }

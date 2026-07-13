@@ -2356,12 +2356,12 @@
             const continueItem = userStats.continueLearning || null;
             const recommendedItem = userStats.recommendedCourse || null;
             copyEl.textContent = continueItem
-                ? `继续学习：第 ${continueItem.lessonOrder} 课`
+                ? `上次学习位置：${continueItem.courseTitle || "当前课程"} · 第 ${continueItem.lessonOrder} 课`
                 : "完成一节课后，这里会自动记住你的下一步。";
 
             if (continueItem) {
                 continueCard.innerHTML = `
-                    <div class="learning-focus-label">继续学习入口</div>
+                    <div class="learning-focus-label">上次学习位置</div>
                     <div class="learning-focus-main">继续学习：第 ${continueItem.lessonOrder} 课</div>
                     <div class="learning-focus-sub">课程：${escapeHtml(continueItem.courseTitle || "当前课程")}<br>课时：${escapeHtml(continueItem.lessonTitle || "下一课")}<br>已完成 ${continueItem.completed} / ${continueItem.totalLessons} 课时</div>
                     <div class="learning-focus-actions">
@@ -2370,7 +2370,7 @@
                 `;
             } else {
                 continueCard.innerHTML = `
-                    <div class="learning-focus-label">继续学习入口</div>
+                    <div class="learning-focus-label">上次学习位置</div>
                     <div class="learning-focus-main">从第一课开始</div>
                     <div class="learning-focus-sub">还没有学习记录时，我会先把你的首页保持简洁。</div>
                 `;
