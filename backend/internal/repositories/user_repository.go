@@ -48,6 +48,13 @@ func (r *UserRepository) Update(user *models.User) error {
 	return r.db.Save(user).Error
 }
 
+func (r *UserRepository) AddXP(userID uint, xp int) error {
+	return r.db.Model(&models.User{}).
+		Where("id = ?", userID).
+		UpdateColumn("total_xp", gorm.Expr("total_xp + ?", xp)).
+		Error
+}
+
 func (r *UserRepository) ListNonAdminUsers() ([]models.User, error) {
 	var users []models.User
 	err := r.db.

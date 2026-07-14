@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"chinese-learning-app/internal/models"
 	"chinese-learning-app/internal/services"
@@ -80,6 +82,43 @@ func (h *CourseHandler) GetLesson(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"lesson": lesson})
+}
+
+func (h *CourseHandler) GetLessonPronunciation(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid lesson ID"})
+		return
+	}
+
+	lesson, err := h.courseService.GetLessonContent(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch lesson pronunciation"})
+		return
+	}
+	if lesson == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Lesson not found"})
+		return
+	}
+
+	text := extractLessonPronunciationText(lesson)
+	audioURL := strings.TrimSpace(lesson.AudioURL)
+	source := "mock_tts_placeholder"
+	mode := "mock"
+	if audioURL != "" {
+		source = "lesson_audio"
+		mode = "audio"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"lessonId": lesson.ID,
+		"title":    lesson.Title,
+		"text":     text,
+		"audioUrl": audioURL,
+		"source":   source,
+		"mode":     mode,
+	})
 }
 
 func (h *CourseHandler) GetProgress(c *gin.Context) {
@@ -485,4 +524,27 @@ func servicesLessonFromUpdateRequest(req UpdateLessonRequest) *models.Lesson {
 		IsFree:    req.IsFree,
 		XpReward:  req.XpReward,
 	}
+}
+
+func extractLessonPronunciationText(lesson *models.Lesson) string {
+	if lesson == nil {
+		return ""
+	}
+
+	raw := strings.TrimSpace(lesson.Content)
+	if raw == "" {
+		return strings.TrimSpace(lesson.Title)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(raw), &payload); err == nil {
+		if content, ok := payload["content"].(string); ok && strings.TrimSpace(content) != "" {
+			return strings.TrimSpace(content)
+		}
+		if introduction, ok := payload["introduction"].(string); ok && strings.TrimSpace(introduction) != "" {
+			return strings.TrimSpace(introduction)
+		}
+	}
+
+	return raw
 }

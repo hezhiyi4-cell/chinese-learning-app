@@ -17,7 +17,7 @@ import (
 func main() {
 	cfg := config.Load()
 
-	if err := database.InitDB(); err != nil {
+	if err := database.InitDB(cfg); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
@@ -28,6 +28,7 @@ func main() {
 	courseRepo := repositories.NewCourseRepository(db)
 	progressRepo := repositories.NewProgressRepository(db)
 	paymentRepo := repositories.NewPaymentRepository(db)
+	toneBattleRepo := repositories.NewToneBattleRepository(db)
 
 	// 初始化 Services
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
@@ -36,16 +37,21 @@ func main() {
 	aiService := services.NewAIService(cfg.OpenAIAPIKey)
 	paypalGateway := services.NewPayPalGateway(cfg.PayPalClientID, cfg.PayPalSecret, cfg.PayPalBaseURL)
 	paymentService := services.NewPaymentService(paymentRepo, userRepo, cfg.FrontendBaseURL, paypalGateway)
+	toneBattleService := services.NewToneBattleService(toneBattleRepo, userRepo, cfg.RedisAddr, cfg.RedisPassword)
 
 	// 初始化 Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	courseHandler := handlers.NewCourseHandler(courseService, progressService)
 	aiHandler := handlers.NewAIHandler(aiService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
+	toneBattleHandler := handlers.NewToneBattleHandler(toneBattleService, userRepo, cfg.JWTSecret)
 
 	// 填充初始数据
 	if err := database.SeedInitialData(courseRepo); err != nil {
 		log.Printf("Warning: Failed to seed initial data: %v", err)
+	}
+	if err := database.SeedToneBattleQuestions(toneBattleRepo); err != nil {
+		log.Printf("Warning: Failed to seed tone battle questions: %v", err)
 	}
 	if err := database.EnsureDefaultAdmin(db, cfg.DefaultAdminEmail, cfg.DefaultAdminPassword); err != nil {
 		log.Printf("Warning: Failed to ensure default admin: %v", err)
@@ -101,6 +107,9 @@ func main() {
 		apiV1.GET("/courses", courseHandler.GetCourses)
 		apiV1.GET("/courses/:id", courseHandler.GetCourseDetail)
 		apiV1.GET("/lessons/:id", courseHandler.GetLesson)
+		apiV1.GET("/lessons/:id/pronunciation", courseHandler.GetLessonPronunciation)
+		apiV1.GET("/tone-battle/questions", toneBattleHandler.ListQuestions)
+		apiV1.GET("/tone-battle/ws", toneBattleHandler.HandleWebSocket)
 
 		// AI 路由（部分公开）
 		ai := apiV1.Group("/ai")

@@ -6,6 +6,8 @@ import (
 
 type Config struct {
 	ServerPort           string
+	DBDriver             string
+	DatabaseURL          string
 	DBHost               string
 	DBPort               string
 	DBUser               string
@@ -28,6 +30,8 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		ServerPort:           getEnvAny([]string{"SERVER_PORT", "PORT"}, "8080"),
+		DBDriver:             getEnv("DB_DRIVER", "sqlite"),
+		DatabaseURL:          getEnv("DATABASE_URL", ""),
 		DBHost:               getEnv("DB_HOST", "localhost"),
 		DBPort:               getEnv("DB_PORT", "5432"),
 		DBUser:               getEnv("DB_USER", "postgres"),
