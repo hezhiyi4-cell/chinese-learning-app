@@ -234,3 +234,95 @@ func TestGetUserStatsRecommendsL2AfterCompletingL1(t *testing.T) {
 		t.Fatalf("expected continue learning lesson order 1, got %d", stats.ContinueLearning.LessonOrder)
 	}
 }
+
+func TestGetUserStatsSyncsRankWithCurrentXP(t *testing.T) {
+	service, userRepo, courseRepo, progressRepo := newProgressServiceForTest(t)
+
+	user := &models.User{
+		Email:        "rank-sync@example.com",
+		PasswordHash: "hash",
+		Nickname:     "段位同步用户",
+		Rank:         "青铜",
+		TotalXP:      75,
+	}
+	if err := userRepo.Create(user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	course := createCourseWithLessons(t, courseRepo, &models.Course{
+		Title:       "段位测试课程",
+		Description: "测试段位自动同步",
+		Level:       "L0",
+		LevelName:   "L0",
+		SortOrder:   1,
+		IsPublished: true,
+	}, "第一课")
+	lessons, err := courseRepo.GetLessons(course.ID)
+	if err != nil {
+		t.Fatalf("get lessons: %v", err)
+	}
+	createLessonProgress(t, progressRepo, user.ID, lessons[0].ID, "perfected", 100)
+
+	stats, err := service.GetUserStats(user.ID)
+	if err != nil {
+		t.Fatalf("get user stats: %v", err)
+	}
+	if stats.Rank != "白银" {
+		t.Fatalf("expected stats rank 白银, got %q", stats.Rank)
+	}
+
+	savedUser, err := userRepo.FindByID(user.ID)
+	if err != nil {
+		t.Fatalf("reload user: %v", err)
+	}
+	if savedUser == nil || savedUser.Rank != "白银" {
+		t.Fatalf("expected persisted rank 白银, got %#v", savedUser)
+	}
+}
+
+func TestUpdateProgressRecalculatesRankAfterXpGain(t *testing.T) {
+	service, userRepo, courseRepo, _ := newProgressServiceForTest(t)
+
+	user := &models.User{
+		Email:        "rank-up@example.com",
+		PasswordHash: "hash",
+		Nickname:     "升段用户",
+		Rank:         "青铜",
+		TotalXP:      55,
+	}
+	if err := userRepo.Create(user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	course := createCourseWithLessons(t, courseRepo, &models.Course{
+		Title:       "升级课程",
+		Description: "完成后应升到白银",
+		Level:       "L0",
+		LevelName:   "L0",
+		SortOrder:   1,
+		IsPublished: true,
+	}, "第一课")
+	lessons, err := courseRepo.GetLessons(course.ID)
+	if err != nil {
+		t.Fatalf("get lessons: %v", err)
+	}
+
+	result, err := service.UpdateProgress(user.ID, lessons[0].ID, 100)
+	if err != nil {
+		t.Fatalf("update progress: %v", err)
+	}
+	if result.Rank != "白银" {
+		t.Fatalf("expected response rank 白银, got %q", result.Rank)
+	}
+	if !result.RankUp {
+		t.Fatal("expected rank up to be true")
+	}
+
+	savedUser, err := userRepo.FindByID(user.ID)
+	if err != nil {
+		t.Fatalf("reload user: %v", err)
+	}
+	if savedUser == nil || savedUser.Rank != "白银" {
+		t.Fatalf("expected persisted rank 白银, got %#v", savedUser)
+	}
+}

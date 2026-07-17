@@ -309,6 +309,10 @@ func (s *ProgressService) UpdateProgress(userID, lessonID uint, score int) (*Pro
 			totalXP = user.TotalXP
 			currentStreak = user.CurrentStreak
 		}
+
+		if _, err := s.syncUserRank(user, updatedProgressList); err != nil {
+			return nil, err
+		}
 	}
 
 	stats, err := s.buildStatsFromSnapshot(updatedProgressList, user)
@@ -341,6 +345,10 @@ func (s *ProgressService) GetUserStats(userID uint) (*StatsResponse, error) {
 
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.syncUserRank(user, progressList); err != nil {
 		return nil, err
 	}
 
@@ -576,6 +584,35 @@ func diffUnlockedAchievements(before, after *StatsResponse) []AchievementItem {
 		}
 	}
 	return result
+}
+
+func (s *ProgressService) syncUserRank(user *models.User, progressList []models.UserProgress) (string, error) {
+	if user == nil {
+		return currentRankName(deriveXPFromProgressList(progressList), "青铜"), nil
+	}
+
+	derivedXP := deriveXPFromProgressList(progressList)
+	totalXP := maxInt(user.TotalXP, derivedXP)
+	newRank := currentRankName(totalXP, user.Rank)
+	shouldUpdate := false
+
+	if user.TotalXP != totalXP {
+		user.TotalXP = totalXP
+		shouldUpdate = true
+	}
+	if user.Rank != newRank {
+		user.Rank = newRank
+		shouldUpdate = true
+	}
+
+	if shouldUpdate {
+		user.UpdatedAt = time.Now()
+		if err := s.userRepo.Update(user); err != nil {
+			return "", err
+		}
+	}
+
+	return newRank, nil
 }
 
 func scoreToStatus(score int) string {
