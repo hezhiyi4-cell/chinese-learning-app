@@ -25,9 +25,9 @@ import (
 const (
 	xfyunTTSHost              = "tts-api.xfyun.cn"
 	xfyunTTSPath              = "/v2/tts"
-	pronunciationCacheVersion = "xfyun-v1"
-	defaultPronunciationPause = `<break time="380ms"/>`
-	shortPronunciationPause   = `<break time="260ms"/>`
+	pronunciationCacheVersion = "xfyun-v2"
+	defaultPronunciationPause = `<break time="620ms"/>`
+	shortPronunciationPause   = `<break time="420ms"/>`
 )
 
 var (
@@ -37,20 +37,20 @@ var (
 
 	initialOrder         = []string{"b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "j", "q", "x", "zh", "ch", "sh", "r", "z", "c", "s"}
 	initialPronunciation = map[string]string{
-		"b":  "玻",
-		"p":  "坡",
+		"b":  "波",
+		"p":  "泼",
 		"m":  "摸",
 		"f":  "佛",
-		"d":  "德",
+		"d":  "得",
 		"t":  "特",
-		"n":  "讷",
+		"n":  "呢",
 		"l":  "勒",
 		"g":  "哥",
 		"k":  "科",
 		"h":  "喝",
-		"j":  "基",
-		"q":  "欺",
-		"x":  "希",
+		"j":  "鸡",
+		"q":  "七",
+		"x":  "西",
 		"zh": "知",
 		"ch": "吃",
 		"sh": "诗",
@@ -62,8 +62,8 @@ var (
 
 	finalOrder         = []string{"a", "o", "e", "i", "u", "ü", "ai", "ei", "ui", "ao", "ou", "iu", "ie", "üe", "er", "an", "en", "in", "un", "ün", "ang", "eng", "ing", "ong"}
 	finalPronunciation = map[string]string{
-		"a":   "啊",
-		"o":   "喔",
+		"a":   "阿",
+		"o":   "哦",
 		"e":   "鹅",
 		"i":   "衣",
 		"u":   "乌",
@@ -71,7 +71,7 @@ var (
 		"ai":  "哀",
 		"ei":  "欸",
 		"ui":  "威",
-		"ao":  "奥",
+		"ao":  "袄",
 		"ou":  "欧",
 		"iu":  "优",
 		"ie":  "耶",
@@ -251,7 +251,7 @@ func (s *PronunciationService) synthesize(spokenText string) ([]byte, error) {
 			"tte":    "utf8",
 			"ttp":    "cssml",
 			"vcn":    s.resolvedVoice(),
-			"speed":  42,
+			"speed":  30,
 			"pitch":  50,
 			"volume": 70,
 		},
@@ -393,6 +393,11 @@ func buildPronunciationScript(title, text string) pronunciationScript {
 			displayText: displayText,
 			spokenText:  joinWithBreaks(finalOrder, finalPronunciation),
 		}
+	case allTokensHaveTeachingMapping(displayText):
+		return pronunciationScript{
+			displayText: displayText,
+			spokenText:  buildMappedTeachingCSSML(displayText),
+		}
 	case looksLikePinyinPhrase(displayText):
 		return pronunciationScript{
 			displayText: displayText,
@@ -445,6 +450,56 @@ func joinWithBreaks(order []string, dictionary map[string]string) string {
 		}
 	}
 	return strings.Join(parts, "")
+}
+
+func allTokensHaveTeachingMapping(text string) bool {
+	tokens := splitPronunciationTokens(text)
+	if len(tokens) == 0 {
+		return false
+	}
+	for _, token := range tokens {
+		if _, ok := lookupTeachingPronunciation(token); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func buildMappedTeachingCSSML(text string) string {
+	tokens := splitPronunciationTokens(text)
+	parts := make([]string, 0, len(tokens)*2)
+	for index, token := range tokens {
+		spoken, ok := lookupTeachingPronunciation(token)
+		if !ok {
+			spoken = token
+		}
+		parts = append(parts, escapeForCSSML(spoken))
+		if index < len(tokens)-1 {
+			parts = append(parts, defaultPronunciationPause)
+		}
+	}
+	return strings.Join(parts, "")
+}
+
+func lookupTeachingPronunciation(token string) (string, bool) {
+	normalized := normalizeTeachingToken(token)
+	if normalized == "" {
+		return "", false
+	}
+	if spoken, ok := initialPronunciation[normalized]; ok {
+		return spoken, true
+	}
+	if spoken, ok := finalPronunciation[normalized]; ok {
+		return spoken, true
+	}
+	return "", false
+}
+
+func normalizeTeachingToken(token string) string {
+	normalized := strings.ToLower(strings.TrimSpace(token))
+	normalized = strings.ReplaceAll(normalized, "u:", "ü")
+	normalized = strings.ReplaceAll(normalized, "v", "ü")
+	return normalized
 }
 
 func looksLikePinyinPhrase(text string) bool {

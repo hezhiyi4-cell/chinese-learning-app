@@ -7,15 +7,27 @@ import (
 
 func TestBuildPronunciationScriptForInitialTable(t *testing.T) {
 	script := buildPronunciationScript("第1课：拼音声母表", "b, p, m, f, d, t, n, l, g, k, h, j, q, x, zh, ch, sh, r, z, c, s")
-	if !strings.Contains(script.spokenText, "玻") || !strings.Contains(script.spokenText, "诗") {
+	if !strings.Contains(script.spokenText, "波") || !strings.Contains(script.spokenText, "诗") {
 		t.Fatalf("expected initial pronunciation script, got %q", script.spokenText)
+	}
+	if !strings.Contains(script.spokenText, `<break time="620ms"/>`) {
+		t.Fatalf("expected teaching pause markers, got %q", script.spokenText)
 	}
 }
 
 func TestBuildPronunciationScriptForFinalTable(t *testing.T) {
 	script := buildPronunciationScript("第2课：拼音韵母表", "a, o, e, i, u, ü, ai, ei, ui, ao, ou, iu, ie, üe, er, an, en, in, un, ün, ang, eng, ing, ong")
-	if !strings.Contains(script.spokenText, "迂") || !strings.Contains(script.spokenText, "翁") {
+	if !strings.Contains(script.spokenText, "阿") || !strings.Contains(script.spokenText, "翁") {
 		t.Fatalf("expected final pronunciation script, got %q", script.spokenText)
+	}
+}
+
+func TestBuildPronunciationScriptForMappedTeachingTokens(t *testing.T) {
+	script := buildPronunciationScript("拼音练习", "b, p, m, f")
+	for _, want := range []string{"波", "泼", "摸", "佛"} {
+		if !strings.Contains(script.spokenText, want) {
+			t.Fatalf("expected %q in mapped script, got %q", want, script.spokenText)
+		}
 	}
 }
 
