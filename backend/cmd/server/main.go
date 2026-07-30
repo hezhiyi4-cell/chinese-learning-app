@@ -34,6 +34,7 @@ func main() {
 	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	courseService := services.NewCourseService(courseRepo)
 	progressService := services.NewProgressService(progressRepo, userRepo, courseRepo)
+	pronunciationService := services.NewPronunciationService(cfg)
 	aiService := services.NewAIService(cfg.OpenAIAPIKey)
 	paypalGateway := services.NewPayPalGateway(cfg.PayPalClientID, cfg.PayPalSecret, cfg.PayPalBaseURL)
 	paymentService := services.NewPaymentService(paymentRepo, userRepo, cfg.FrontendBaseURL, paypalGateway)
@@ -41,7 +42,7 @@ func main() {
 
 	// 初始化 Handlers
 	authHandler := handlers.NewAuthHandler(authService)
-	courseHandler := handlers.NewCourseHandler(courseService, progressService)
+	courseHandler := handlers.NewCourseHandler(courseService, progressService, pronunciationService)
 	aiHandler := handlers.NewAIHandler(aiService)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
 	toneBattleHandler := handlers.NewToneBattleHandler(toneBattleService, userRepo, cfg.JWTSecret)

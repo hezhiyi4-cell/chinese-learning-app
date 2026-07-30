@@ -13,6 +13,7 @@ type Config struct {
 	DBUser               string
 	DBPassword           string
 	DBName               string
+	DBSSLMode            string
 	RedisAddr            string
 	RedisPassword        string
 	JWTSecret            string
@@ -25,6 +26,10 @@ type Config struct {
 	PayPalClientID       string
 	PayPalSecret         string
 	PayPalBaseURL        string
+	XFYunTTSAppID        string
+	XFYunTTSAPIKey       string
+	XFYunTTSAPISecret    string
+	XFYunTTSVoice        string
 }
 
 func Load() *Config {
@@ -37,6 +42,7 @@ func Load() *Config {
 		DBUser:               getEnv("DB_USER", "postgres"),
 		DBPassword:           getEnv("DB_PASSWORD", "postgres"),
 		DBName:               getEnv("DB_NAME", "chinese_learning"),
+		DBSSLMode:            getEnv("DB_SSLMODE", "disable"),
 		RedisAddr:            getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:        getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:            getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -49,6 +55,10 @@ func Load() *Config {
 		PayPalClientID:       getEnv("PAYPAL_CLIENT_ID", ""),
 		PayPalSecret:         getEnv("PAYPAL_SECRET", ""),
 		PayPalBaseURL:        getEnv("PAYPAL_BASE_URL", "https://api-m.sandbox.paypal.com"),
+		XFYunTTSAppID:        getEnv("XFYUN_TTS_APP_ID", ""),
+		XFYunTTSAPIKey:       getEnv("XFYUN_TTS_API_KEY", ""),
+		XFYunTTSAPISecret:    getEnv("XFYUN_TTS_API_SECRET", ""),
+		XFYunTTSVoice:        getEnv("XFYUN_TTS_VOICE", "xiaoyan"),
 	}
 }
 

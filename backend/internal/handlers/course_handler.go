@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"chinese-learning-app/internal/models"
 	"chinese-learning-app/internal/services"
@@ -13,14 +11,20 @@ import (
 )
 
 type CourseHandler struct {
-	courseService   *services.CourseService
-	progressService *services.ProgressService
+	courseService        *services.CourseService
+	progressService      *services.ProgressService
+	pronunciationService *services.PronunciationService
 }
 
-func NewCourseHandler(courseService *services.CourseService, progressService *services.ProgressService) *CourseHandler {
+func NewCourseHandler(
+	courseService *services.CourseService,
+	progressService *services.ProgressService,
+	pronunciationService *services.PronunciationService,
+) *CourseHandler {
 	return &CourseHandler{
-		courseService:   courseService,
-		progressService: progressService,
+		courseService:        courseService,
+		progressService:      progressService,
+		pronunciationService: pronunciationService,
 	}
 }
 
@@ -102,22 +106,19 @@ func (h *CourseHandler) GetLessonPronunciation(c *gin.Context) {
 		return
 	}
 
-	text := extractLessonPronunciationText(lesson)
-	audioURL := strings.TrimSpace(lesson.AudioURL)
-	source := "mock_tts_placeholder"
-	mode := "mock"
-	if audioURL != "" {
-		source = "lesson_audio"
-		mode = "audio"
+	result, err := h.pronunciationService.GetLessonPronunciation(lesson)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to build lesson pronunciation"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"lessonId": lesson.ID,
 		"title":    lesson.Title,
-		"text":     text,
-		"audioUrl": audioURL,
-		"source":   source,
-		"mode":     mode,
+		"text":     result.Text,
+		"audioUrl": result.AudioURL,
+		"source":   result.Source,
+		"mode":     result.Mode,
 	})
 }
 
@@ -524,27 +525,4 @@ func servicesLessonFromUpdateRequest(req UpdateLessonRequest) *models.Lesson {
 		IsFree:    req.IsFree,
 		XpReward:  req.XpReward,
 	}
-}
-
-func extractLessonPronunciationText(lesson *models.Lesson) string {
-	if lesson == nil {
-		return ""
-	}
-
-	raw := strings.TrimSpace(lesson.Content)
-	if raw == "" {
-		return strings.TrimSpace(lesson.Title)
-	}
-
-	var payload map[string]any
-	if err := json.Unmarshal([]byte(raw), &payload); err == nil {
-		if content, ok := payload["content"].(string); ok && strings.TrimSpace(content) != "" {
-			return strings.TrimSpace(content)
-		}
-		if introduction, ok := payload["introduction"].(string); ok && strings.TrimSpace(introduction) != "" {
-			return strings.TrimSpace(introduction)
-		}
-	}
-
-	return raw
 }
